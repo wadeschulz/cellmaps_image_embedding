@@ -5,7 +5,7 @@
 
 
 import unittest
-from cellmaps_image_embedding.runner import CellmapsimageembeddingRunner
+from cellmaps_image_embedding.runner import CellmapsImageEmbeddingRunner
 
 
 class TestCellmapsimageembeddingrunner(unittest.TestCase):
@@ -19,11 +19,11 @@ class TestCellmapsimageembeddingrunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsimageembeddingRunner()
+        myobj = CellmapsImageEmbeddingRunner()
 
         self.assertIsNotNone(myobj)
 
     def test_run(self):
         """ Tests run()"""
-        myobj = CellmapsimageembeddingRunner()
+        myobj = CellmapsImageEmbeddingRunner()
         self.assertEqual(0, myobj.run())

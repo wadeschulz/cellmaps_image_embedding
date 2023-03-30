@@ -6,7 +6,7 @@ import logging
 import logging.config
 
 import cellmaps_image_embedding
-from cellmaps_image_embedding.runner import CellmapsimageembeddingRunner
+from cellmaps_image_embedding.runner import CellmapsImageEmbeddingRunner
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +38,12 @@ def _parse_arguments(desc, args):
     """
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=Formatter)
+    parser.add_argument('outdir', help='Output directory')
+    parser.add_argument('--imagedir', required=True,
+                        help='Directory where blue, red, yellow, and '
+                             'green image directories reside')
+    parser.add_argument('--image_gene_node_attributes', required=True,
+                        help='Image gene node attributes TSV')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -88,14 +94,14 @@ def main(args):
     :param args: arguments passed to command line usually :py:func:`sys.argv[1:]`
     :type args: list
 
-    :return: return value of :py:meth:`cellmaps_image_embedding.runner.CellmapsimageembeddingRunner.run`
+    :return: return value of :py:meth:`cellmaps_image_embedding.runner.CellmapsImageEmbeddingRunner.run`
              or ``2`` if an exception is raised
     :rtype: int
     """
     desc = """
     Version {version}
 
-    Invokes run() method on CellmapsimageembeddingRunner
+    Invokes run() method on CellmapsImageEmbeddingRunner
 
     """.format(version=cellmaps_image_embedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
@@ -104,7 +110,9 @@ def main(args):
 
     try:
         _setup_logging(theargs)
-        return CellmapsimageembeddingRunner().run()
+        return CellmapsImageEmbeddingRunner(outdir=theargs.outdir,
+                                            imagedir=theargs.imagedir,
+                                            image_gene_node_attributes=theargs.image_gene_node_attributes).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2
