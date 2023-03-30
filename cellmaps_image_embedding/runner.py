@@ -10,14 +10,13 @@ class CellmapsimageembeddingRunner(object):
     """
     Class to run algorithm
     """
-    def __init__(self, exitcode):
+    def __init__(self):
         """
         Constructor
 
         :param exitcode: value to return via :py:meth:`.CellmapsimageembeddingRunner.run` method
         :type int:
         """
-        self._exitcode = exitcode
         logger.debug('In constructor')
 
     def run(self):
@@ -28,4 +27,4 @@ class CellmapsimageembeddingRunner(object):
         :return:
         """
         logger.debug('In run method')
-        return self._exitcode
+        return 0
