@@ -75,7 +75,5 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
             self.assertTrue(os.path.isdir(subdir))
             image_emd = os.path.join(subdir, 'image_emd.tsv')
             self.assertTrue(os.path.isfile(image_emd))
-
-
         finally:
             shutil.rmtree(temp_dir)
