@@ -11,7 +11,7 @@ import unittest
 from cellmaps_image_embedding import cellmaps_image_embeddingcmd
 
 
-class TestCellmaps_image_embedding(unittest.TestCase):
+class TestCellmapsImageEmbedding(unittest.TestCase):
     """Tests for `cellmaps_image_embedding` package."""
 
     def setUp(self):
@@ -22,12 +22,20 @@ class TestCellmaps_image_embedding(unittest.TestCase):
 
     def test_parse_arguments(self):
         """Tests parse arguments"""
-        res = cellmaps_image_embeddingcmd._parse_arguments('hi', [])
+        res = cellmaps_image_embeddingcmd._parse_arguments('hi', ['foo',
+                                                                  '--imagedir', 'imagedir',
+                                                                  '--image_gene_node_attributes', 'attrfile'])
 
         self.assertEqual(res.verbose, 0)
+        self.assertEqual('foo', res.outdir)
+        self.assertEqual('imagedir', res.imagedir)
+        self.assertEqual('attrfile', res.image_gene_node_attributes)
         self.assertEqual(res.logconf, None)
 
-        someargs = ['-vv', '--logconf', 'hi']
+        someargs = ['-vv', '--logconf', 'hi',
+                    'foo',
+                    '--imagedir', 'imagedir',
+                    '--image_gene_node_attributes', 'attrfile']
         res = cellmaps_image_embeddingcmd._parse_arguments('hi', someargs)
 
         self.assertEqual(res.verbose, 2)
@@ -42,7 +50,10 @@ class TestCellmaps_image_embedding(unittest.TestCase):
             pass
 
         # args.logconf is None
-        res = cellmaps_image_embeddingcmd._parse_arguments('hi', [])
+        res = cellmaps_image_embeddingcmd._parse_arguments('hi',
+                                                           ['foo',
+                                                            '--imagedir', 'imagedir',
+                                                            '--image_gene_node_attributes', 'attrfile'])
         cellmaps_image_embeddingcmd._setup_logging(res)
 
         # args.logconf set to a file
@@ -74,7 +85,10 @@ args=(sys.stderr,)
 format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
 
             res = cellmaps_image_embeddingcmd._parse_arguments('hi', ['--logconf',
-                                                                       logfile])
+                                                                       logfile,
+                                                                      'foo',
+                                                                      '--imagedir', 'imagedir',
+                                                                      '--image_gene_node_attributes', 'attrfile'])
             cellmaps_image_embeddingcmd._setup_logging(res)
 
         finally:
@@ -86,7 +100,11 @@ format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
         # try where loading config is successful
         try:
             temp_dir = tempfile.mkdtemp()
-            res = cellmaps_image_embeddingcmd.main(['myprog.py'])
-            self.assertEqual(res, 0)
+            res = cellmaps_image_embeddingcmd.main(['myprog.py',
+                                                    'foo',
+                                                    '--imagedir', 'imagedir',
+                                                    '--image_gene_node_attributes',
+                                                    'attrfile'])
+            self.assertEqual(res, 2)
         finally:
             shutil.rmtree(temp_dir)

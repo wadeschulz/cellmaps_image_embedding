@@ -59,7 +59,7 @@ class CellmapsImageEmbeddingRunner(object):
                 raise CellMapsImageEmbeddingError('imagedir must be set')
 
             if self._image_gene_node_attributes is None:
-                raise CellMapsImageEmbeddingError('image_gene_ndoe_attributes must be set')
+                raise CellMapsImageEmbeddingError('image_gene_node_attributes must be set')
 
             exit_status = 0
 
@@ -81,9 +81,9 @@ class CellmapsImageEmbeddingRunner(object):
                         embedding.append(str(random.random()))
                     f.write('\t'.join(embedding) + '\n')
         finally:
-            cellmaps_io.write_task_finish(outdir=self._outdir,
-                                          start_time=self._start_time,
-                                          status=exit_status)
+            cellmaps_io.write_task_finish_json(outdir=self._outdir,
+                                               start_time=self._start_time,
+                                               status=exit_status)
 
         return exit_status
 
