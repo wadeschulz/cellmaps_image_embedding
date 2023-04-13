@@ -61,8 +61,6 @@ class CellmapsImageEmbeddingRunner(object):
             if self._image_gene_node_attributes is None:
                 raise CellMapsImageEmbeddingError('image_gene_node_attributes must be set')
 
-            exit_status = 0
-
             uniq_genes = set()
             with open(self._image_gene_node_attributes, 'r') as f:
                 reader = csv.reader(f, delimiter='\t')
@@ -80,6 +78,7 @@ class CellmapsImageEmbeddingRunner(object):
                     for cntr in range(self._dimensions):
                         embedding.append(str(random.random()))
                     f.write('\t'.join(embedding) + '\n')
+            exit_status = 0
         finally:
             cellmaps_io.write_task_finish_json(outdir=self._outdir,
                                                start_time=self._start_time,
