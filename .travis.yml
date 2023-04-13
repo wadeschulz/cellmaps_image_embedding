@@ -1,6 +1,7 @@
 # Config file for automatic testing at travis-ci.org
 
 language: python
+dist: bionic
 python:
   - "3.11"
   - "3.10"
@@ -10,12 +11,13 @@ python:
 
 # Command to install dependencies, e.g. pip install -r requirements.txt --use-mirrors
 install:
+    - pip install https://github.com/idekerlab/cellmaps_utils/archive/master.zip
     - pip install -r requirements.txt
     - pip install coveralls
 
 # Command to run tests, e.g. python setup.py test
 script:
-    - coverage run -source cellmaps_image_embedding setup.py test
+    - coverage run --source cellmaps_image_embedding setup.py test
 
 after_success: coveralls
 
