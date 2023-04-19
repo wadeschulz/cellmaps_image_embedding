@@ -1,8 +1,8 @@
 # Use an official Python runtime as a parent image
-FROM continuumio/miniconda3
+FROM continuumio/anaconda3
 
 RUN apt-get --allow-releaseinfo-change update
-RUN apt-get install -y build-essential
+RUN apt-get install -y build-essential python3-opencv
 
 RUN pip install https://github.com/idekerlab/cellmaps_utils/archive/master.zip
 
