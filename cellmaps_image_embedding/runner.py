@@ -6,7 +6,7 @@ import time
 import logging
 import random
 import cellmaps_image_embedding
-from cellmaps_utils import cellmaps_io
+from cellmaps_utils import logutils
 from cellmaps_image_embedding.exceptions import CellMapsImageEmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -46,9 +46,9 @@ class CellmapsImageEmbeddingRunner(object):
         if not os.path.isdir(self._outdir):
             os.makedirs(self._outdir, mode=0o755)
 
-        cellmaps_io.setup_filelogger(outdir=self._outdir,
+        logutils.setup_filelogger(outdir=self._outdir,
                                      handlerprefix='cellmaps_image_embedding')
-        cellmaps_io.write_task_start_json(outdir=self._outdir,
+        logutils.write_task_start_json(outdir=self._outdir,
                                           start_time=self._start_time,
                                           data={'image_gene_node_attributes': str(self._image_gene_node_attributes),
                                                 'imagedir': self._imagedir},
@@ -80,9 +80,9 @@ class CellmapsImageEmbeddingRunner(object):
                     f.write('\t'.join(embedding) + '\n')
             exit_status = 0
         finally:
-            cellmaps_io.write_task_finish_json(outdir=self._outdir,
-                                               start_time=self._start_time,
-                                               status=exit_status)
+            logutils.write_task_finish_json(outdir=self._outdir,
+                                            start_time=self._start_time,
+                                            status=exit_status)
 
         return exit_status
 
