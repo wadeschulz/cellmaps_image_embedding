@@ -5,6 +5,7 @@ import csv
 import time
 import logging
 import random
+import subprocess
 import cellmaps_image_embedding
 from cellmaps_utils import logutils
 from cellmaps_image_embedding.exceptions import CellMapsImageEmbeddingError
@@ -18,7 +19,10 @@ class CellmapsImageEmbeddingRunner(object):
     """
     def __init__(self, outdir=None,
                  imagedir=None,
-                 image_gene_node_attributes=None):
+                 image_gene_node_attributes=None,
+                 pythonbinary='/opt/conda/bin/python',
+                 predict='/opt/densenet/predict/predict_d121.py',
+                 model_path='/opt/densenet/models/model.pth'):
         """
         Constructor
 
@@ -31,6 +35,26 @@ class CellmapsImageEmbeddingRunner(object):
         self._image_gene_node_attributes = image_gene_node_attributes
         self._start_time = int(time.time())
         self._dimensions = 1024
+        self._pythonbinary = pythonbinary
+        self._predict = predict
+        self._model_path = model_path
+        # python /opt/densenet/predict/predict_d121.py --image_dir /opt/densenet/exampleimages --out_dir /Users/churas/src/cellmaps_image_embedding/xxx --model_path /opt/densenet/models/model.pth
+
+    def _run_cmd(self, cmd):
+        """
+        Runs hidef command as a command line process
+        :param cmd_to_run: command to run as list
+        :type cmd_to_run: list
+        :return: (return code, standard out, standard error)
+        :rtype: tuple
+        """
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+
+        out, err = p.communicate()
+
+        return p.returncode, out, err
 
     def run(self):
         """
