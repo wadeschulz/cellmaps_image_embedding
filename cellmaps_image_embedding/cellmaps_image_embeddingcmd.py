@@ -44,6 +44,8 @@ def _parse_arguments(desc, args):
                              'green image directories reside')
     parser.add_argument('--image_gene_node_attributes', required=True,
                         help='Image gene node attributes TSV')
+    parser.add_argument('--model_path', type=str, default='/opt/densenet/models/model.pth',
+                        help='Path to model file to use (set to one in container)')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -112,7 +114,8 @@ def main(args):
         _setup_logging(theargs)
         return CellmapsImageEmbeddingRunner(outdir=theargs.outdir,
                                             imagedir=theargs.imagedir,
-                                            image_gene_node_attributes=theargs.image_gene_node_attributes).run()
+                                            image_gene_node_attributes=theargs.image_gene_node_attributes,
+                                            model_path=theargs.model_path).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

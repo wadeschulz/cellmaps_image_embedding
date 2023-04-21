@@ -91,30 +91,6 @@ class Config(object):
     features_dir = out_dir
 
 
-
-def export_onnx(model, file_path='densenet_model.onnx'):
-    """
-    Function for exporting the model into onnx format
-    Make sure you have the latest pytorch version 
-    """
-    import onnxruntime as ort
-    # Switch the model to eval model
-    model.eval()
-    # An example input you would normally provide to your model's forward() method.
-    example = torch.rand(1, 4, 1024, 1024)
-    torch.onnx.export(model, example, file_path,
-                    input_names=['image'],
-                    output_names=['classes', 'features'],
-                    dynamic_axes = {'image': [2, 3]}, # the width and height of the image can be changed
-                    verbose=False, opset_version=11)
-    ort_session = ort.InferenceSession(file_path)
-    exported_results = ort_session.run(None, {'image': example.numpy().astype(np.float32)})
-    with torch.no_grad():
-        original_results = model(example)
-    assert np.allclose(original_results[0].numpy(), exported_results[0])
-    print(f'ONNX File {file_path} exported successfully')
-
-
 def prob_to_result(probs, image_ids, th=0.5):
     probs = probs.copy()
     probs[range(len(probs)), np.argmax(probs, axis=1)] = 1
@@ -145,41 +121,54 @@ def predict_augment(model, dataloader, augment, seed, opt):
 
     result_csv_fname = opj(out_dir, "results_%s.csv.gz" % opt.result_name)
     result_prob_fname = opj(out_dir, "probs_%s.npy" % opt.result_name)
-    result_feature_fname = opj(features_dir, "features_%s.npz" % opt.result_name)
+    result_feature_fname = opj(features_dir, "features_%s.tsv" % opt.result_name)
 
     cuda_is_available = False
     if torch.cuda.is_available():
         cuda_is_available = True
 
     prob_list = []
-    feature_list = []
+    # feature_list = []
     image_ids = np.array(dataloader.dataset.image_ids)
-    for iter, (images, indices) in tqdm(
-        enumerate(dataloader, 0), total=len(dataloader)
-    ):
-        with torch.no_grad():
-            if cuda_is_available:
-                images = Variable(images.cuda())
-            else:
-                images = Variable(images)
-            logits, features = model(images)
+    with open(result_feature_fname, 'w') as f:
+        headerline = ['']
+        for x in range(1, 1024 + 1):
+            headerline.append(str(x))
+        f.write('\t'.join(headerline) + '\n')
+        for iter, (images, indices) in tqdm(
+            enumerate(dataloader, 0), total=len(dataloader)
+        ):
+            with torch.no_grad():
+                if cuda_is_available:
+                    images = Variable(images.cuda())
+                else:
+                    images = Variable(images)
+                logits, features = model(images)
 
-            # probabilities
-            probs = F.sigmoid(logits)
-            prob_list += probs.cpu().data.numpy().tolist()
+                # probabilities
+                probs = F.sigmoid(logits)
+                prob_list += probs.cpu().data.numpy().tolist()
 
-            # features
-            features = features.cpu().data.numpy().tolist()
-            feature_list.extend(features)
+                # features
+                features = features.cpu().data.numpy().tolist()
+                f.write(image_ids[iter] + '\t')
+
+                # not sure why the list(map(str,features)) did not
+                # work so just doing this and will figure this out
+                # later
+
+                f.write('\t'.join(list(map(str, features[0]))) + '\n')
+
+                # feature_list.extend(features)
 
     # save result
     probs = np.array(prob_list)
     print("result prob shape: %s" % str(probs.shape))
     np.save(result_prob_fname, probs)
 
-    features = np.array(feature_list, dtype="float32")
-    print("result feature shape: %s" % str(features.shape))
-    np.savez_compressed(result_feature_fname, feats=features)
+    # features = np.array(feature_list, dtype="float32")
+    # print("result feature shape: %s" % str(features.shape))
+    # np.savez_compressed(result_feature_fname, feats=features)
 
     result_df = prob_to_result(probs, image_ids)
     print("result csv shape: %s" % str(result_df.shape))
@@ -209,6 +198,9 @@ if __name__ == "__main__":
     parser.add_argument('--image_ids', type=str, help='Limits what images are read to a '
                                                       'comma delimited image prefixes '
                                                       '1_A1_1,1_A1_2')
+    parser.add_argument('--result_name', type=str, default='example',
+                        help='Name to put in middle of output files. namely '
+                             'features_XXX.npz, probs_XXX.npy, and results_XXX.csv.gz')
 
     args = parser.parse_args()
     print("%s: calling main function ... " % os.path.basename(__file__))
@@ -225,6 +217,7 @@ if __name__ == "__main__":
     opt.features_dir = opt.out_dir
     opt.image_size = args.image_size
     opt.crop_size = args.crop_size
+    opt.result_name = args.result_name
 
     if args.image_ids is not None:
         alt_image_ids = args.image_ids.split(',')
@@ -260,7 +253,7 @@ if __name__ == "__main__":
         batch_size=opt.batch_size,
         drop_last=False,
         num_workers=opt.num_workers,
-        pin_memory=True,
+        pin_memory=False,
     )
     print("len(dataset): %d" % len(dataset))
 

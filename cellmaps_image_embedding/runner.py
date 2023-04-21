@@ -22,7 +22,8 @@ class CellmapsImageEmbeddingRunner(object):
                  image_gene_node_attributes=None,
                  pythonbinary='/opt/conda/bin/python',
                  predict='/opt/densenet/predict/predict_d121.py',
-                 model_path='/opt/densenet/models/model.pth'):
+                 model_path='/opt/densenet/models/model.pth',
+                 suffix='jpg'):
         """
         Constructor
 
@@ -38,7 +39,7 @@ class CellmapsImageEmbeddingRunner(object):
         self._pythonbinary = pythonbinary
         self._predict = predict
         self._model_path = model_path
-        # python /opt/densenet/predict/predict_d121.py --image_dir /opt/densenet/exampleimages --out_dir /Users/churas/src/cellmaps_image_embedding/xxx --model_path /opt/densenet/models/model.pth
+        self._suffix = suffix
 
     def _run_cmd(self, cmd):
         """
@@ -55,6 +56,40 @@ class CellmapsImageEmbeddingRunner(object):
         out, err = p.communicate()
 
         return p.returncode, out, err
+
+    def _get_image_id_list(self):
+        """
+        Looks at red directory under image directory to
+        get a list of image ids which are the file names
+        in that directory with last ``_`` and everything to
+        the right of it removed from the file name
+        :return:
+        """
+        image_set = set()
+        red_image_dir = os.path.join(self._imagedir, 'red')
+        for entry in os.listdir(red_image_dir):
+            if not entry.endswith(self._suffix):
+                continue
+            if not os.path.isfile(os.path.join(red_image_dir, entry)):
+                continue
+            image_set.add(entry[: entry.rfind('_')])
+        return list(image_set)
+
+    def _get_image_sublist(self, image_id_list=None,
+                           chunk_size=3):
+        """
+        Gets list of image ids as chunks of smaller
+        lists
+
+        :param image_id_list: Original full list
+        :type image_id_list: list
+        :param chunk_size: Size of chunk
+        :type chunk_size: 3
+        :return: image ids
+        :rtype: list
+        """
+        for i in range(0, len(image_id_list), chunk_size):
+            yield image_id_list[i:i + chunk_size]
 
     def run(self):
         """
@@ -85,6 +120,14 @@ class CellmapsImageEmbeddingRunner(object):
             if self._image_gene_node_attributes is None:
                 raise CellMapsImageEmbeddingError('image_gene_node_attributes must be set')
 
+            image_id_list = self._get_image_id_list()
+
+            counter = 1
+            for image_id_sublist in self._get_image_sublist(image_id_list=image_id_list):
+                print(image_id_sublist)
+
+
+            """ This is the fake version
             uniq_genes = set()
             with open(self._image_gene_node_attributes, 'r') as f:
                 reader = csv.reader(f, delimiter='\t')
@@ -102,6 +145,7 @@ class CellmapsImageEmbeddingRunner(object):
                     for cntr in range(self._dimensions):
                         embedding.append(str(random.random()))
                     f.write('\t'.join(embedding) + '\n')
+            """
             exit_status = 0
         finally:
             logutils.write_task_finish_json(outdir=self._outdir,
