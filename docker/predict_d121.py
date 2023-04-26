@@ -227,6 +227,7 @@ if __name__ == "__main__":
         cudnn.benchmark = True
         print("use gpus: %s" % opt.gpus)
 
+    alt_image_ids = None
     if args.image_ids is not None:
         alt_image_ids = args.image_ids.split(',')
 
