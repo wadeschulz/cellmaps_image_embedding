@@ -69,7 +69,7 @@ class Config(object):
     """
 
     gpus = "0,1"  # Follow the same convention as CUDA_VISIBLE_DEVICES
-    num_workers = 2
+    num_workers = 1
     batch_size = 32
 
     num_classes = 28
@@ -89,6 +89,7 @@ class Config(object):
     result_name = "example"
     out_dir = "../results/"
     features_dir = out_dir
+    cuda_available = False
 
 
 def prob_to_result(probs, image_ids, th=0.5):
@@ -103,7 +104,7 @@ def prob_to_result(probs, image_ids, th=0.5):
     return result_df
 
 
-def predict_augment(model, dataloader, augment, seed, opt):
+def predict_augment(model, dataloader, augment, seed, opt, f):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
@@ -113,78 +114,76 @@ def predict_augment(model, dataloader, augment, seed, opt):
     random_crop = (opt.crop_size > 0) and (seed != 0)
     dataloader.dataset.set_random_crop(random_crop=random_crop)
 
+    # prob_list = []
+    # feature_list = []
+    image_ids = np.array(dataloader.dataset.image_ids)
+
+    for iter, (images, indices) in tqdm(
+        enumerate(dataloader, 0), total=len(dataloader)
+    ):
+        with torch.no_grad():
+            if opt.cuda_available:
+                images = Variable(images.cuda())
+            else:
+                images = Variable(images)
+            logits, features = model(images)
+
+            # probabilities
+            probs = F.sigmoid(logits)
+            # prob_list += probs.cpu().data.numpy().tolist()
+
+            # features
+            features = features.cpu().data.numpy().tolist()
+            f.write(image_ids[iter] + '\t')
+
+            # not sure why the list(map(str,features)) did not
+            # work so just doing this and will figure this out
+            # later
+            f.write('\t'.join(list(map(str, features[0]))) + '\n')
+            del logits
+            del images
+            del features
+            # feature_list.extend(features)
+
+    # save result
+    # probs = np.array(prob_list)
+    # print("result prob shape: %s" % str(probs.shape))
+    # np.save(result_prob_fname, probs)
+
+    # features = np.array(feature_list, dtype="float32")
+    # print("result feature shape: %s" % str(features.shape))
+    # np.savez_compressed(result_feature_fname, feats=features)
+
+    # result_df = prob_to_result(probs, image_ids)
+    # print("result csv shape: %s" % str(result_df.shape))
+    # print(result_df.head())
+    # result_df.to_csv(result_csv_fname, index=False, compression="gzip")
+    # return probs, features
+
+
+def do_predict(model, dataloader, opt):
+    model = model.eval()
+
     out_dir = opt.out_dir
     features_dir = opt.features_dir
     os.makedirs(out_dir, exist_ok=True)
     os.makedirs(features_dir, exist_ok=True)
     print("out dir: %s **%s**" % (out_dir, opt.result_name))
 
-    result_csv_fname = opj(out_dir, "results_%s.csv.gz" % opt.result_name)
-    result_prob_fname = opj(out_dir, "probs_%s.npy" % opt.result_name)
+    # result_csv_fname = opj(out_dir, "results_%s.csv.gz" % opt.result_name)
+    # result_prob_fname = opj(out_dir, "probs_%s.npy" % opt.result_name)
     result_feature_fname = opj(features_dir, "features_%s.tsv" % opt.result_name)
 
-    cuda_is_available = False
-    if torch.cuda.is_available():
-        cuda_is_available = True
-
-    prob_list = []
-    # feature_list = []
-    image_ids = np.array(dataloader.dataset.image_ids)
     with open(result_feature_fname, 'w') as f:
         headerline = ['']
         for x in range(1, 1024 + 1):
             headerline.append(str(x))
         f.write('\t'.join(headerline) + '\n')
-        for iter, (images, indices) in tqdm(
-            enumerate(dataloader, 0), total=len(dataloader)
-        ):
-            with torch.no_grad():
-                if cuda_is_available:
-                    images = Variable(images.cuda())
-                else:
-                    images = Variable(images)
-                logits, features = model(images)
 
-                # probabilities
-                probs = F.sigmoid(logits)
-                prob_list += probs.cpu().data.numpy().tolist()
+        for seed in opt.seeds:
+            for augment in opt.augments:
+                predict_augment(model, dataloader, augment, seed, opt, f)
 
-                # features
-                features = features.cpu().data.numpy().tolist()
-                f.write(image_ids[iter] + '\t')
-
-                # not sure why the list(map(str,features)) did not
-                # work so just doing this and will figure this out
-                # later
-
-                f.write('\t'.join(list(map(str, features[0]))) + '\n')
-
-                # feature_list.extend(features)
-
-    # save result
-    probs = np.array(prob_list)
-    print("result prob shape: %s" % str(probs.shape))
-    np.save(result_prob_fname, probs)
-
-    # features = np.array(feature_list, dtype="float32")
-    # print("result feature shape: %s" % str(features.shape))
-    # np.savez_compressed(result_feature_fname, feats=features)
-
-    result_df = prob_to_result(probs, image_ids)
-    print("result csv shape: %s" % str(result_df.shape))
-    print(result_df.head())
-    result_df.to_csv(result_csv_fname, index=False, compression="gzip")
-    return probs, features
-
-
-def do_predict(model, dataloader, opt):
-    model = model.eval()
-    results = []
-    for seed in opt.seeds:
-        for augment in opt.augments:
-            ret = predict_augment(model, dataloader, augment, seed, opt)
-            results.append(ret)
-    return results
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='predict densenet 121')
@@ -200,7 +199,7 @@ if __name__ == "__main__":
                                                       '1_A1_1,1_A1_2')
     parser.add_argument('--result_name', type=str, default='example',
                         help='Name to put in middle of output files. namely '
-                             'features_XXX.npz, probs_XXX.npy, and results_XXX.csv.gz')
+                             'features_XXX.tsv')
 
     args = parser.parse_args()
     print("%s: calling main function ... " % os.path.basename(__file__))
@@ -219,6 +218,15 @@ if __name__ == "__main__":
     opt.crop_size = args.crop_size
     opt.result_name = args.result_name
 
+    device = 'cpu'
+
+    if torch.cuda.is_available():
+        opt.cuda_available = True
+        device = 'cuda'
+        os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpus
+        cudnn.benchmark = True
+        print("use gpus: %s" % opt.gpus)
+
     if args.image_ids is not None:
         alt_image_ids = args.image_ids.split(',')
 
@@ -228,13 +236,7 @@ if __name__ == "__main__":
         pretrained=opt.model_path,
     )
     model = DataParallel(model)
-    if torch.cuda.is_available():
-        device = 'cuda'
-        os.environ["CUDA_VISIBLE_DEVICES"] = opt.gpus
-        cudnn.benchmark = True
-        print("use gpus: %s" % opt.gpus)
-    else:
-        device = 'cpu'
+
     model.to(device)
 
     print("model name: %s" % opt.model_name)
@@ -250,9 +252,9 @@ if __name__ == "__main__":
     dataloader = DataLoader(
         dataset,
         sampler=SequentialSampler(dataset),
-        batch_size=opt.batch_size,
+        batch_size=1,
         drop_last=False,
-        num_workers=opt.num_workers,
+        num_workers=0,
         pin_memory=False,
     )
     print("len(dataset): %d" % len(dataset))
