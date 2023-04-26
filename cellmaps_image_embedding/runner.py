@@ -76,7 +76,7 @@ class CellmapsImageEmbeddingRunner(object):
         return list(image_set)
 
     def _get_image_sublist(self, image_id_list=None,
-                           chunk_size=3):
+                           chunk_size=50):
         """
         Gets list of image ids as chunks of smaller
         lists
@@ -84,7 +84,7 @@ class CellmapsImageEmbeddingRunner(object):
         :param image_id_list: Original full list
         :type image_id_list: list
         :param chunk_size: Size of chunk
-        :type chunk_size: 3
+        :type chunk_size: int
         :return: image ids
         :rtype: list
         """
@@ -120,11 +120,21 @@ class CellmapsImageEmbeddingRunner(object):
             if self._image_gene_node_attributes is None:
                 raise CellMapsImageEmbeddingError('image_gene_node_attributes must be set')
 
-            image_id_list = self._get_image_id_list()
+            # image_id_list = self._get_image_id_list()
 
-            counter = 1
-            for image_id_sublist in self._get_image_sublist(image_id_list=image_id_list):
-                print(image_id_sublist)
+            # counter = 1
+            # for image_id_sublist in self._get_image_sublist(image_id_list=image_id_list):
+            #    # print(image_id_sublist)
+            # just run a single command for now
+            logger.info('Running command: ')
+            cmd = [self._pythonbinary, self._predict,
+                   '--image_dir', self._imagedir,
+                   '--out_dir', self._outdir]
+            exit_status, out, err = self._run_cmd(cmd=cmd)
+            if out is not None:
+                logger.debug(str(out))
+            if err is not None:
+                logger.error(str(err))
 
 
             """ This is the fake version
@@ -146,7 +156,6 @@ class CellmapsImageEmbeddingRunner(object):
                         embedding.append(str(random.random()))
                     f.write('\t'.join(embedding) + '\n')
             """
-            exit_status = 0
         finally:
             logutils.write_task_finish_json(outdir=self._outdir,
                                             start_time=self._start_time,
