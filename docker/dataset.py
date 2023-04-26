@@ -32,7 +32,9 @@ class ProteinDataset(Dataset):
         self.random_crop = False
 
         if alt_image_ids is not None:
+
             self.image_ids = alt_image_ids
+            print('setting alt image ids: ' + str(self.image_ids))
         else:
             # should we get image names from all color directories
             # and then let sort uniq do its work or do we assume we are good?
