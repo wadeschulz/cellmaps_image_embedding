@@ -1,10 +1,8 @@
 #! /usr/bin/env python
 
 import os
-import csv
 import time
 import logging
-import random
 import subprocess
 import cellmaps_image_embedding
 from cellmaps_utils import logutils
@@ -120,11 +118,6 @@ class CellmapsImageEmbeddingRunner(object):
             if self._image_gene_node_attributes is None:
                 raise CellMapsImageEmbeddingError('image_gene_node_attributes must be set')
 
-            # image_id_list = self._get_image_id_list()
-
-            # counter = 1
-            # for image_id_sublist in self._get_image_sublist(image_id_list=image_id_list):
-            #    # print(image_id_sublist)
             # just run a single command for now
             logger.info('Running command: ')
             cmd = [self._pythonbinary, self._predict,
@@ -135,27 +128,6 @@ class CellmapsImageEmbeddingRunner(object):
                 logger.debug(str(out))
             if err is not None:
                 logger.error(str(err))
-
-
-            """ This is the fake version
-            uniq_genes = set()
-            with open(self._image_gene_node_attributes, 'r') as f:
-                reader = csv.reader(f, delimiter='\t')
-                for row in reader:
-                    uniq_genes.add(row[0])
-
-            embedding_file = os.path.join(self._outdir, 'image_emd.tsv')
-            with open(embedding_file, 'w') as f:
-                headerline = ['']
-                for x in range(1, 1025):
-                    headerline.append(str(x))
-                f.write('\t'.join(headerline) + '\n')
-                for gene in uniq_genes:
-                    embedding = [gene]
-                    for cntr in range(self._dimensions):
-                        embedding.append(str(random.random()))
-                    f.write('\t'.join(embedding) + '\n')
-            """
         finally:
             logutils.write_task_finish_json(outdir=self._outdir,
                                             start_time=self._start_time,
