@@ -46,34 +46,3 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
             self.assertEqual('imagedir must be set', str(e))
         finally:
             shutil.rmtree(temp_dir)
-
-    def test_run_image_gene_node_attributes_must_be_set(self):
-        temp_dir = tempfile.mkdtemp()
-        try:
-            myobj = CellmapsImageEmbeddingRunner(outdir=temp_dir,
-                                                 imagedir=temp_dir)
-            myobj.run()
-            self.fail('Expected exception')
-        except CellMapsImageEmbeddingError as e:
-            self.assertEqual('image_gene_node_attributes '
-                             'must be set', str(e))
-        finally:
-            shutil.rmtree(temp_dir)
-
-    def test_run_success(self):
-        temp_dir = tempfile.mkdtemp()
-        try:
-            subdir = os.path.join(temp_dir, 'subdir')
-            attrfile = os.path.join(temp_dir, 'attr.tsv')
-            with open(attrfile, 'w') as f:
-                f.write('a\tb\nc\t\d\n')
-
-            myobj = CellmapsImageEmbeddingRunner(outdir=subdir,
-                                                 imagedir=temp_dir,
-                                                 image_gene_node_attributes=attrfile)
-            self.assertEqual(0, myobj.run())
-            self.assertTrue(os.path.isdir(subdir))
-            image_emd = os.path.join(subdir, 'image_emd.tsv')
-            self.assertTrue(os.path.isfile(image_emd))
-        finally:
-            shutil.rmtree(temp_dir)

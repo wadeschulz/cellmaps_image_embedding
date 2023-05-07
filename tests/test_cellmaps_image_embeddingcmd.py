@@ -23,76 +23,20 @@ class TestCellmapsImageEmbedding(unittest.TestCase):
     def test_parse_arguments(self):
         """Tests parse arguments"""
         res = cellmaps_image_embeddingcmd._parse_arguments('hi', ['foo',
-                                                                  '--imagedir', 'imagedir',
-                                                                  '--image_gene_node_attributes', 'attrfile'])
+                                                                  '--inputdir', 'imagedir'])
 
-        self.assertEqual(res.verbose, 0)
+        self.assertEqual(0, res.verbose)
         self.assertEqual('foo', res.outdir)
-        self.assertEqual('imagedir', res.imagedir)
-        self.assertEqual('attrfile', res.image_gene_node_attributes)
+        self.assertEqual('imagedir', res.inputdir)
         self.assertEqual(res.logconf, None)
 
         someargs = ['-vv', '--logconf', 'hi',
                     'foo',
-                    '--imagedir', 'imagedir',
-                    '--image_gene_node_attributes', 'attrfile']
+                    '--inputdir', 'imagedir']
         res = cellmaps_image_embeddingcmd._parse_arguments('hi', someargs)
 
-        self.assertEqual(res.verbose, 2)
-        self.assertEqual(res.logconf, 'hi')
-
-    def test_setup_logging(self):
-        """ Tests logging setup"""
-        try:
-            cellmaps_image_embeddingcmd._setup_logging(None)
-            self.fail('Expected AttributeError')
-        except AttributeError:
-            pass
-
-        # args.logconf is None
-        res = cellmaps_image_embeddingcmd._parse_arguments('hi',
-                                                           ['foo',
-                                                            '--imagedir', 'imagedir',
-                                                            '--image_gene_node_attributes', 'attrfile'])
-        cellmaps_image_embeddingcmd._setup_logging(res)
-
-        # args.logconf set to a file
-        try:
-            temp_dir = tempfile.mkdtemp()
-
-            logfile = os.path.join(temp_dir, 'log.conf')
-            with open(logfile, 'w') as f:
-                f.write("""[loggers]
-keys=root
-
-[handlers]
-keys=stream_handler
-
-[formatters]
-keys=formatter
-
-[logger_root]
-level=DEBUG
-handlers=stream_handler
-
-[handler_stream_handler]
-class=StreamHandler
-level=DEBUG
-formatter=formatter
-args=(sys.stderr,)
-
-[formatter_formatter]
-format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
-
-            res = cellmaps_image_embeddingcmd._parse_arguments('hi', ['--logconf',
-                                                                       logfile,
-                                                                      'foo',
-                                                                      '--imagedir', 'imagedir',
-                                                                      '--image_gene_node_attributes', 'attrfile'])
-            cellmaps_image_embeddingcmd._setup_logging(res)
-
-        finally:
-            shutil.rmtree(temp_dir)
+        self.assertEqual(2, res.verbose)
+        self.assertEqual('hi', res.logconf)
 
     def test_main(self):
         """Tests main function"""
@@ -102,9 +46,7 @@ format=%(asctime)s %(name)-12s %(levelname)-8s %(message)s""")
             temp_dir = tempfile.mkdtemp()
             res = cellmaps_image_embeddingcmd.main(['myprog.py',
                                                     'foo',
-                                                    '--imagedir', 'imagedir',
-                                                    '--image_gene_node_attributes',
-                                                    'attrfile'])
+                                                    '--inputdir', 'imagedir'])
             self.assertEqual(res, 2)
         finally:
             shutil.rmtree(temp_dir)

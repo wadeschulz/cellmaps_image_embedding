@@ -2,27 +2,15 @@
 
 import argparse
 import sys
+import json
 import logging
 import logging.config
-
+from cellmaps_utils import logutils
+from cellmaps_utils import constants
 import cellmaps_image_embedding
 from cellmaps_image_embedding.runner import CellmapsImageEmbeddingRunner
 
 logger = logging.getLogger(__name__)
-
-
-LOG_FORMAT = "%(asctime)-15s %(levelname)s %(relativeCreated)dms " \
-             "%(filename)s::%(funcName)s():%(lineno)d %(message)s"
-
-
-class Formatter(argparse.ArgumentDefaultsHelpFormatter,
-                argparse.RawDescriptionHelpFormatter):
-    """
-    Combine two Formatters to get help and default values
-    displayed when showing help
-
-    """
-    pass
 
 
 def _parse_arguments(desc, args):
@@ -37,15 +25,25 @@ def _parse_arguments(desc, args):
     :rtype: :py:class:`argparse.Namespace`
     """
     parser = argparse.ArgumentParser(description=desc,
-                                     formatter_class=Formatter)
+                                     formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
-    parser.add_argument('--imagedir', required=True,
+    parser.add_argument('--inputdir', required=True,
                         help='Directory where blue, red, yellow, and '
-                             'green image directories reside')
-    parser.add_argument('--image_gene_node_attributes', required=True,
-                        help='Image gene node attributes TSV')
+                             'green image directories reside ')
     parser.add_argument('--model_path', type=str, default='/opt/densenet/models/model.pth',
                         help='Path to model file to use (set to one in container)')
+    parser.add_argument('--name',
+                        help='Name of this run, needed for FAIRSCAPE. If '
+                             'unset, name value from specified '
+                             'by --inputdir directory will be used')
+    parser.add_argument('--organization_name',
+                        help='Name of organization running this tool, needed '
+                             'for FAIRSCAPE. If unset, organization name specified '
+                             'in --inputdir directory will be used')
+    parser.add_argument('--project_name',
+                        help='Name of project running this tool, needed for '
+                             'FAIRSCAPE. If unset, project name specified '
+                             'in --input directory will be used')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -66,29 +64,6 @@ def _parse_arguments(desc, args):
     return parser.parse_args(args)
 
 
-def _setup_logging(args):
-    """
-    Sets up logging based on parsed command line arguments.
-    If args.logconf is set use that configuration otherwise look
-    at args.verbose and set logging for this module
-
-    :param args: parsed command line arguments from argparse
-    :raises AttributeError: If args is None or args.logconf is None
-    :return: None
-    """
-
-    if args.logconf is None:
-        level = (50 - (10 * args.verbose))
-        logging.basicConfig(format=LOG_FORMAT,
-                            level=level)
-        logger.setLevel(level)
-        return
-
-    # logconf was set use that file
-    logging.config.fileConfig(args.logconf,
-                              disable_existing_loggers=False)
-
-
 def main(args):
     """
     Main entry point for program
@@ -101,9 +76,10 @@ def main(args):
     :rtype: int
     """
     desc = """
-    Version {version}
+Version {version}
 
-    Invokes run() method on CellmapsImageEmbeddingRunner
+Invokes run() method on CellmapsImageEmbeddingRunner
+
 
     """.format(version=cellmaps_image_embedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
@@ -111,11 +87,13 @@ def main(args):
     theargs.version = cellmaps_image_embedding.__version__
 
     try:
-        _setup_logging(theargs)
+        logutils.setup_cmd_logging(theargs)
         return CellmapsImageEmbeddingRunner(outdir=theargs.outdir,
-                                            imagedir=theargs.imagedir,
-                                            image_gene_node_attributes=theargs.image_gene_node_attributes,
-                                            model_path=theargs.model_path).run()
+                                            inputdir=theargs.inputdir,
+                                            model_path=theargs.model_path,
+                                            name=theargs.name,
+                                            project_name=theargs.project_name,
+                                            organization_name=theargs.organization_name).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

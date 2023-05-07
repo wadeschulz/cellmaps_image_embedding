@@ -26,17 +26,17 @@ setup_requirements = []
 test_requirements = []
 
 setup(
-    author="Christopher Churas",
-    author_email='cchuras@ucsd.edu',
+    author="Gege Qian",
+    author_email='geqian@ucsd.edu',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
     ],
     description="Python Boilerplate contains all the boilerplate you need to create a Python package with command line",
     install_requires=requirements,
@@ -48,7 +48,7 @@ setup(
     name='cellmaps_image_embedding',
     packages=find_packages(include=['cellmaps_image_embedding']),
     package_dir={'cellmaps_image_embedding': 'cellmaps_image_embedding'},
-    scripts=[ 'cellmaps_image_embedding/cellmaps_image_embeddingcmd.py'],
+    scripts=['cellmaps_image_embedding/cellmaps_image_embeddingcmd.py'],
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
