@@ -4,6 +4,9 @@ import os
 import time
 import logging
 import subprocess
+import csv
+import random
+import warnings
 import cellmaps_image_embedding
 from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -33,7 +36,9 @@ class CellmapsImageEmbeddingRunner(object):
         :type int:
         """
         logger.debug('In constructor')
-        self._outdir = outdir
+        if outdir is None:
+            raise CellMapsImageEmbeddingError('outdir is None')
+        self._outdir = os.path.abspath(outdir)
         self._inputdir = inputdir
         self._start_time = int(time.time())
         self._dimensions = 1024
@@ -55,13 +60,16 @@ class CellmapsImageEmbeddingRunner(object):
         :return: (return code, standard out, standard error)
         :rtype: tuple
         """
-        p = subprocess.Popen(cmd,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
+        try:
+            p = subprocess.Popen(cmd,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
 
-        out, err = p.communicate()
+            out, err = p.communicate()
 
-        return p.returncode, out, err
+            return p.returncode, out, err
+        except FileNotFoundError as fe:
+            return 99, '', str(fe)
 
     def _get_image_id_list(self):
         """
@@ -143,8 +151,9 @@ class CellmapsImageEmbeddingRunner(object):
         exitcode = 99
         try:
             logger.debug('In run method')
-            if self._outdir is None:
-                raise CellMapsImageEmbeddingError('outdir must be set')
+
+            if os.path.isdir(self._outdir):
+                raise CellMapsImageEmbeddingError(self._outdir + ' already exists')
 
             if not os.path.isdir(self._outdir):
                 os.makedirs(self._outdir, mode=0o755)
@@ -181,8 +190,20 @@ class CellmapsImageEmbeddingRunner(object):
                 logger.error('Command failed: ' + str(exit_status) + ' : ' +
                              str(out) + ' : ' + str(err))
 
+            warnings.warn('image_emd.tsv contains FAKE DATA!!!!\n'
+                          'You have been warned\nHave a nice day\n')
+            logger.error('image_emd.tsv contains FAKE DATA!!!! '
+                         'You have been warned. Have a nice day')
+            # generate fake result
             with open(os.path.join(self._outdir, 'image_emd.tsv'), 'w') as f:
-                f.write('TODO write image embeddings here\n')
+                writer = csv.writer(f, delimiter='\t')
+                header_line = ['']
+                header_line.extend([x for x in range(1, self._dimensions)])
+                writer.writerow(header_line)
+                for image_id in self._get_image_id_list():
+                    row = [image_id]
+                    row.extend([random.random() for x in range(0, self._dimensions)])
+                    writer.writerow(row)
 
             # Todo: uncomment when above work
             # Above registrations need to work for this to work

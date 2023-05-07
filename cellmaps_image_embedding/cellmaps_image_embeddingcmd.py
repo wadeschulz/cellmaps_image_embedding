@@ -44,6 +44,7 @@ def _parse_arguments(desc, args):
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
                              'in --input directory will be used')
+
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
