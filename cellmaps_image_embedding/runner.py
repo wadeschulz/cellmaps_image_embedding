@@ -177,6 +177,13 @@ class CellmapsImageEmbeddingRunner(object):
             if err is not None:
                 logger.error(str(err))
 
+            if exit_status != 0:
+                logger.error('Command failed: ' + str(exit_status) + ' : ' +
+                             str(out) + ' : ' + str(err))
+
+            with open(os.path.join(self._outdir, 'image_emd.tsv'), 'w') as f:
+                f.write('TODO write image embeddings here\n')
+
             # Todo: uncomment when above work
             # Above registrations need to work for this to work
             # register computation
