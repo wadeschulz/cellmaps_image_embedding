@@ -9,6 +9,7 @@ from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_image_embedding
 from cellmaps_image_embedding.runner import CellmapsImageEmbeddingRunner
+from cellmaps_image_embedding.runner import FakeEmbeddingGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -89,9 +90,10 @@ Invokes run() method on CellmapsImageEmbeddingRunner
 
     try:
         logutils.setup_cmd_logging(theargs)
+        gen = FakeEmbeddingGenerator(theargs.inputdir, dimensions=1024)
         return CellmapsImageEmbeddingRunner(outdir=theargs.outdir,
                                             inputdir=theargs.inputdir,
-                                            model_path=theargs.model_path,
+                                            embedding_generator=gen,
                                             name=theargs.name,
                                             project_name=theargs.project_name,
                                             organization_name=theargs.organization_name).run()
