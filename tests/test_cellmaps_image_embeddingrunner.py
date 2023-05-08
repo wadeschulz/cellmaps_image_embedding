@@ -23,26 +23,25 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsImageEmbeddingRunner()
-
+        myobj = CellmapsImageEmbeddingRunner(outdir='foo')
         self.assertIsNotNone(myobj)
 
-    def test_run_outdir_must_be_set(self):
-        """ Tests run()"""
-        myobj = CellmapsImageEmbeddingRunner()
+    def test_constructor_outdir_must_be_set(self):
+
         try:
-            myobj.run()
+            CellmapsImageEmbeddingRunner()
             self.fail('Expected exception')
         except CellMapsImageEmbeddingError as e:
-            self.assertEqual('outdir must be set', str(e))
+            self.assertEqual('outdir is None', str(e))
 
     def test_run_image_dir_must_be_set(self):
         temp_dir = tempfile.mkdtemp()
         try:
-            myobj = CellmapsImageEmbeddingRunner(outdir=temp_dir)
+            rundir = os.path.join(temp_dir, 'run')
+            myobj = CellmapsImageEmbeddingRunner(outdir=rundir)
             myobj.run()
             self.fail('Expected exception')
         except CellMapsImageEmbeddingError as e:
-            self.assertEqual('imagedir must be set', str(e))
+            self.assertEqual('inputdir must be set', str(e))
         finally:
             shutil.rmtree(temp_dir)
