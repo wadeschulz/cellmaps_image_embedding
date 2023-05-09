@@ -2,7 +2,6 @@
 
 import argparse
 import sys
-import json
 import logging
 import logging.config
 from cellmaps_utils import logutils

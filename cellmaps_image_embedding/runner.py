@@ -8,6 +8,7 @@ import csv
 import random
 import warnings
 from tqdm import tqdm
+from cellmaps_utils import constants
 import cellmaps_image_embedding
 from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
@@ -61,9 +62,11 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         super().__init__(dimensions=dimensions)
         self._inputdir = inputdir
         self._suffix = suffix
-        warnings.warn('image_emd.tsv contains FAKE DATA!!!!\n'
+        warnings.warn(constants.IMAGE_EMBEDDING_FILE +
+                      ' contains FAKE DATA!!!!\n'
                       'You have been warned\nHave a nice day\n')
-        logger.error('image_emd.tsv contains FAKE DATA!!!! '
+        logger.error(constants.IMAGE_EMBEDDING_FILE +
+                     ' contains FAKE DATA!!!! '
                      'You have been warned. Have a nice day')
 
     def _get_image_id_list(self):
@@ -75,13 +78,15 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         :return:
         """
         image_set = set()
-        red_image_dir = os.path.join(self._inputdir, 'red')
+        red_image_dir = os.path.join(self._inputdir, constants.RED)
         for entry in os.listdir(red_image_dir):
             if not entry.endswith(self._suffix):
                 continue
             if not os.path.isfile(os.path.join(red_image_dir, entry)):
                 continue
-            image_set.add(entry[: entry.rfind('_')])
+            # include the _ at the end cause that is also included in
+            # image_gene_node_attributes.tsv file
+            image_set.add(entry[: entry.rfind('_')+1])
         return list(image_set)
 
     def get_next_embedding(self):
@@ -281,7 +286,7 @@ class CellmapsImageEmbeddingRunner(object):
             # self._register_software()
 
             # generate result
-            with open(os.path.join(self._outdir, 'image_emd.tsv'), 'w') as f:
+            with open(os.path.join(self._outdir, constants.IMAGE_EMBEDDING_FILE), 'w') as f:
                 writer = csv.writer(f, delimiter='\t')
                 header_line = ['']
                 header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
