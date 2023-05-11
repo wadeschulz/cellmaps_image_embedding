@@ -95,7 +95,8 @@ Invokes run() method on CellmapsImageEmbeddingRunner
                                             embedding_generator=gen,
                                             name=theargs.name,
                                             project_name=theargs.project_name,
-                                            organization_name=theargs.organization_name).run()
+                                            organization_name=theargs.organization_name,
+                                            input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2

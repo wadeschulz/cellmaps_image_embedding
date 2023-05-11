@@ -2,6 +2,7 @@
 
 import os
 import time
+from datetime import date
 import logging
 import subprocess
 import csv
@@ -176,9 +177,10 @@ class CellmapsImageEmbeddingRunner(object):
     def __init__(self, outdir=None,
                  inputdir=None,
                  embedding_generator=None,
-                 name=cellmaps_image_embedding.__name__,
+                 name=None,
                  organization_name=None,
                  project_name=None,
+                 input_data_dict=None,
                  provenance_utils=ProvenanceUtil()):
         """
         Constructor
@@ -198,6 +200,8 @@ class CellmapsImageEmbeddingRunner(object):
         self._provenance_utils = provenance_utils
         self._embedding_generator = embedding_generator
         self._softwareid = None
+        self._input_data_dict = input_data_dict
+        self._image_embedding = None
 
     def _create_run_crate(self):
         """
@@ -230,7 +234,7 @@ class CellmapsImageEmbeddingRunner(object):
         :raises CellMapsImageEmbeddingError: If fairscape call fails
         """
         self._softwareid = self._provenance_utils.register_software(self._outdir,
-                                                                    name=self._name,
+                                                                    name=cellmaps_image_embedding.__name__,
                                                                     description=cellmaps_image_embedding.__description__,
                                                                     author=cellmaps_image_embedding.__author__,
                                                                     version=cellmaps_image_embedding.__version__,
@@ -239,7 +243,7 @@ class CellmapsImageEmbeddingRunner(object):
 
     def _register_computation(self):
         """
-        # Todo: added inused dataset, software and what is being generated
+        # Todo: added used dataset(s)
         :return:
         """
         self._provenance_utils.register_computation(self._outdir,
@@ -247,9 +251,31 @@ class CellmapsImageEmbeddingRunner(object):
                                                     run_by=str(os.getlogin()),
                                                     command=str(self._input_data_dict),
                                                     description='run of ' + cellmaps_image_embedding.__name__,
-                                                    used_software=[self._softwareid])
+                                                    used_software=[self._softwareid],
                                                     #used_dataset=[self._unique_datasetid, self._samples_datasetid],
-                                                    #generated=[self._image_gene_attrid])
+                                                    generated=[self._image_embedding])
+
+    def _register_image_embedding_file(self):
+        """
+        Registers image_gene_node_attributes.tsv file with create as a dataset
+
+        """
+        data_dict = {'name': cellmaps_image_embedding.__name__ + ' output file',
+                     'description': 'Image gene node attributes file',
+                     'data-format': 'tsv',
+                     'author': cellmaps_image_embedding.__name__,
+                     'version': cellmaps_image_embedding.__version__,
+                     'date-published': date.today().strftime('%m-%d-%Y')}
+        self._image_embedding = self._provenance_utils.register_dataset(self._outdir,
+                                                                        source_file=self.get_image_embedding_file(),
+                                                                        data_dict=data_dict)
+
+    def get_image_embedding_file(self):
+        """
+        Gets image embedding file
+        :return:
+        """
+        return os.path.join(self._outdir, constants.IMAGE_EMBEDDING_FILE)
 
     def run(self):
         """
@@ -280,13 +306,10 @@ class CellmapsImageEmbeddingRunner(object):
 
             self._create_run_crate()
 
-            # Todo: uncomment when fixed
-            # register software fails due to this bug:
-            # https://github.com/fairscape/fairscape-cli/issues/7
-            # self._register_software()
+            self._register_software()
 
             # generate result
-            with open(os.path.join(self._outdir, constants.IMAGE_EMBEDDING_FILE), 'w') as f:
+            with open(self.get_image_embedding_file(), 'w') as f:
                 writer = csv.writer(f, delimiter='\t')
                 header_line = ['']
                 header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
@@ -294,10 +317,11 @@ class CellmapsImageEmbeddingRunner(object):
                 for row in self._embedding_generator.get_next_embedding():
                     writer.writerow(row)
 
+            self._register_image_embedding_file()
             # Todo: uncomment when above work
             # Above registrations need to work for this to work
             # register computation
-            # self._register_computation()
+            self._register_computation()
         finally:
             logutils.write_task_finish_json(outdir=self._outdir,
                                             start_time=self._start_time,
