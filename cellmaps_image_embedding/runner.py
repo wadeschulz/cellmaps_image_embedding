@@ -203,23 +203,25 @@ class CellmapsImageEmbeddingRunner(object):
         self._input_data_dict = input_data_dict
         self._image_embedding = None
 
-    def _create_run_crate(self):
+    def _create_rocrate(self):
         """
         Creates rocrate for output directory
 
         :raises CellMapsProvenanceError: If there is an error
         """
-        # TODO: If organization or project name is unset need to pull from input rocrate
-        org_name = self._organization_name
-        if org_name is None:
-            org_name = 'TODO BETTER SET THIS via input rocrate'
+        name, proj_name, org_name = self._provenance_utils.get_name_project_org_of_rocrate(self._inputdir)
 
-        proj_name = self._project_name
-        if proj_name is None:
-            proj_name = 'TODO BETTER SET THIS via input rocrate'
+        if self._name is not None:
+            name = self._name
+
+        if self._organization_name is not None:
+            org_name = self._organization_name
+
+        if self._project_name is not None:
+            proj_name = self._project_name
         try:
             self._provenance_utils.register_rocrate(self._outdir,
-                                                    name='cellmaps_image_embedding',
+                                                    name=name,
                                                     organization_name=org_name,
                                                     project_name=proj_name)
         except TypeError as te:
@@ -246,13 +248,16 @@ class CellmapsImageEmbeddingRunner(object):
         # Todo: added used dataset(s)
         :return:
         """
+        logger.debug('Getting id of input rocrate')
+        input_dataset_id = self._provenance_utils.get_id_of_rocrate(self._inputdir)
+
         self._provenance_utils.register_computation(self._outdir,
                                                     name=cellmaps_image_embedding.__name__ + ' computation',
                                                     run_by=str(os.getlogin()),
                                                     command=str(self._input_data_dict),
                                                     description='run of ' + cellmaps_image_embedding.__name__,
                                                     used_software=[self._softwareid],
-                                                    #used_dataset=[self._unique_datasetid, self._samples_datasetid],
+                                                    used_dataset=[input_dataset_id],
                                                     generated=[self._image_embedding])
 
     def _register_image_embedding_file(self):
@@ -268,7 +273,8 @@ class CellmapsImageEmbeddingRunner(object):
                      'date-published': date.today().strftime('%m-%d-%Y')}
         self._image_embedding = self._provenance_utils.register_dataset(self._outdir,
                                                                         source_file=self.get_image_embedding_file(),
-                                                                        data_dict=data_dict)
+                                                                        data_dict=data_dict,
+                                                                        skip_copy=True)
 
     def get_image_embedding_file(self):
         """
@@ -304,7 +310,7 @@ class CellmapsImageEmbeddingRunner(object):
             if self._inputdir is None:
                 raise CellMapsImageEmbeddingError('inputdir must be set')
 
-            self._create_run_crate()
+            self._create_rocrate()
 
             self._register_software()
 
