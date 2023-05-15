@@ -8,7 +8,7 @@ import os
 import shutil
 import unittest
 import tempfile
-from cellmaps_image_embedding.runner import CellmapsImageEmbeddingRunner
+from cellmaps_image_embedding.runner import CellmapsImageEmbedder
 from cellmaps_image_embedding.exceptions import CellMapsImageEmbeddingError
 
 
@@ -23,13 +23,13 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
 
     def test_constructor(self):
         """Tests constructor"""
-        myobj = CellmapsImageEmbeddingRunner(outdir='foo')
+        myobj = CellmapsImageEmbedder(outdir='foo')
         self.assertIsNotNone(myobj)
 
     def test_constructor_outdir_must_be_set(self):
 
         try:
-            CellmapsImageEmbeddingRunner()
+            CellmapsImageEmbedder()
             self.fail('Expected exception')
         except CellMapsImageEmbeddingError as e:
             self.assertEqual('outdir is None', str(e))
@@ -38,7 +38,7 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
         temp_dir = tempfile.mkdtemp()
         try:
             rundir = os.path.join(temp_dir, 'run')
-            myobj = CellmapsImageEmbeddingRunner(outdir=rundir)
+            myobj = CellmapsImageEmbedder(outdir=rundir)
             myobj.run()
             self.fail('Expected exception')
         except CellMapsImageEmbeddingError as e:

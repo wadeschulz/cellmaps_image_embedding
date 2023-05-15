@@ -1,19 +1,29 @@
 #! /usr/bin/env python
 
 import os
+import sys
 import time
 from datetime import date
 import logging
-import subprocess
 import csv
 import random
 import warnings
+import pandas as pd
+import torch
+import torch.backends.cudnn as cudnn
+import torch.nn.functional as F
+from torch.autograd import Variable
+from torch.nn import DataParallel
+from torch.utils.data import DataLoader
+from torch.utils.data.sampler import SequentialSampler
 from tqdm import tqdm
 from cellmaps_utils import constants
 import cellmaps_image_embedding
 from cellmaps_utils import logutils
 from cellmaps_utils.provenance import ProvenanceUtil
 from cellmaps_image_embedding.exceptions import CellMapsImageEmbeddingError
+from cellmaps_image_embedding.dataset import *
+from cellmaps_image_embedding.models import *
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +67,15 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
     def __init__(self, inputdir, dimensions=1024,
                  suffix='.jpg'):
         """
+        Constructor
 
-        :param dimensions:
+        :param inputdir: Directory where images reside under
+                         red, green, blue, and yellow directories
+        :type inputdir: str
+        :param dimensions: Desired size of output embedding
+        :type dimensions: int
+        :param suffix: Image suffix with starting ``.``
+        :type suffix: str
         """
         super().__init__(dimensions=dimensions)
         self._inputdir = inputdir
@@ -105,72 +122,140 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
             yield row
 
 
-class DensenetCmdEmbeddingGenerator(EmbeddingGenerator):
+class DensenetEmbeddingGenerator(EmbeddingGenerator):
     """
+    Runs densenet bundled with this tool via command line to
+    generate embedding. Why do it this way? Easier transition
+    from the original
+    `Densenet <https://github.com/CellProfiling/densenet>`__
+    code and no memory leaks
 
     """
     def __init__(self, inputdir, dimensions=1024,
-                 pythonbinary='/opt/conda/bin/python',
-                 predict='/opt/densenet/predict/predict_d121.py',
-                 model_path='/opt/densenet/models/model.pth',
+                 outdir=None,
+                 model_path=None,
                  suffix='jpg'):
         """
+        Constructor
 
-        :param dimensions:
+        :param inputdir: Directory where red, blue, green, and yellow
+                         image directories reside
+        :type inputdir: str
+        :param dimensions: Desired size of output embedding vector
+        :type dimensions: int
+        :param pythonbinary: Path to python binary, if set to ``None``
+                             the version of python that invoked this
+                             command will be used
+        :type pythonbinary: str
+        :param predict: Path to prediction script. Default value is the
+                        script bundled with this tool
+        :type predict: str
+        :param model_path: Path to model file
+        :type model_path: str
+        :param suffix: Image suffix with starting ``.``
+        :type suffix: str
         """
-        super().__init__(self, dimensions=dimensions)
+        super().__init__(dimensions=dimensions)
+        self._outdir = outdir
         self._inputdir = inputdir
-        self._pythonbinary = pythonbinary
-        self._predict = predict
-        self._model_path = model_path
+        self._gpus = ''
+        self._image_size = 1536
+        self._crop_size = 1024
+        self._device = 'cpu'
+        self._cuda_available = False
+        self._model_path = os.path.abspath(model_path)
         self._suffix = suffix
+        self._channels = 4
+        self._num_classes = 28
+        self._seeds = [0]
+        self._augments = ['default']
+        self._model = self._initialize_model()
+        self._dataset = self._initialize_dataset()
+        self._dataloader = self._initialize_dataloader()
 
-    def _run_cmd(self, cmd):
+    def _initialize_model(self):
         """
-        Runs hidef command as a command line process
-        :param cmd_to_run: command to run as list
-        :type cmd_to_run: list
-        :return: (return code, standard out, standard error)
-        :rtype: tuple
+
         """
-        try:
-            p = subprocess.Popen(cmd,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
+        model = eval('class_densenet121_large_dropout')(num_classes=self._num_classes,
+                                                        in_channels=self._channels,
+                                                        pretrained=self._model_path)
+        model = DataParallel(model)
+        model.to(self._device)
+        model = model.eval()
+        return model
 
-            out, err = p.communicate()
+    def _initialize_dataset(self):
+        """
 
-            return p.returncode, out, err
-        except FileNotFoundError as fe:
-            return 99, '', str(fe)
+        :return:
+        """
+        dataset = ProteinDataset(
+            self._inputdir,
+            image_size=self._image_size,
+            crop_size=self._crop_size,
+            in_channels=self._channels,
+            suffix=self._suffix,
+            alt_image_ids=None)
+        return dataset
+
+    def _initialize_dataloader(self):
+        """
+
+        :return:
+        """
+        dataloader = DataLoader(
+            self._dataset,
+            sampler=SequentialSampler(self._dataset),
+            batch_size=1,
+            drop_last=False,
+            num_workers=0,
+            pin_memory=False,
+        )
+        return dataloader
 
     def get_next_embedding(self):
         """
         Generator method for getting next embedding.
-        Caller should implement with ``yield`` operator
 
-        :raises: NotImplementedError: Subclasses should implement this
-        :return: Embedding
+        :return: Embedding vector with 1st element
         :rtype: list
         """
-        logger.info('Running command: ')
-        raise CellMapsImageEmbeddingError('Implementation not completed')
+        for seed in self._seeds:
+            for augment in self._augments:
+                np.random.seed(seed)
+                torch.manual_seed(seed)
+                # eg. augment_default
+                transform = eval("augment_%s" % augment)
+                self._dataloader.dataset.set_transform(transform=transform)
+                random_crop = (self._crop_size > 0) and (seed != 0)
+                self._dataloader.dataset.set_random_crop(random_crop=random_crop)
+                image_ids = np.array(self._dataloader.dataset.image_ids)
 
-        cmd = [self._pythonbinary, self._predict,
-               '--image_dir', self._inputdir,
-               '--out_dir', self._outdir]
-        exit_status, out, err = self._run_cmd(cmd=cmd)
-        if out is not None:
-            logger.debug(str(out))
-        if err is not None:
-            logger.error(str(err))
+                for iter_index, (images, indices) in tqdm(
+                    enumerate(self._dataloader, 0), total=len(self._dataloader)
+                ):
+                    with torch.no_grad():
+                        if self._cuda_available:
+                            images = Variable(images.cuda())
+                        else:
+                            images = Variable(images)
+                        logits, features = self._model(images)
 
-        if exit_status != 0:
-            logger.error('Command failed: ' + str(exit_status) + ' : ' +
-                         str(out) + ' : ' + str(err))
+                        # probabilities
+                        # probs = F.sigmoid(logits)
+                        # prob_list += probs.cpu().data.numpy().tolist()
+
+                        # features
+                        features = features.cpu().data.numpy().tolist()
+                        row = [image_ids[iter_index]]
+                        row.extend(features[0])
+                        del features
+                        del logits
+                        yield row
 
 
-class CellmapsImageEmbeddingRunner(object):
+class CellmapsImageEmbedder(object):
     """
     Class to run algorithm
     """
@@ -185,7 +270,7 @@ class CellmapsImageEmbeddingRunner(object):
         """
         Constructor
 
-        :param exitcode: value to return via :py:meth:`.CellmapsImageEmbeddingRunner.run` method
+        :param exitcode: value to return via :py:meth:`.CellmapsImageEmbedder.run` method
         :type int:
         """
         logger.debug('In constructor')
@@ -245,8 +330,8 @@ class CellmapsImageEmbeddingRunner(object):
 
     def _register_computation(self):
         """
-        # Todo: added used dataset(s)
-        :return:
+        Registers computation with FAIRSCAPE
+
         """
         logger.debug('Getting id of input rocrate')
         input_dataset_id = self._provenance_utils.get_id_of_rocrate(self._inputdir)
@@ -315,7 +400,7 @@ class CellmapsImageEmbeddingRunner(object):
             self._register_software()
 
             # generate result
-            with open(self.get_image_embedding_file(), 'w') as f:
+            with open(self.get_image_embedding_file(), 'w', newline='') as f:
                 writer = csv.writer(f, delimiter='\t')
                 header_line = ['']
                 header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
@@ -324,9 +409,7 @@ class CellmapsImageEmbeddingRunner(object):
                     writer.writerow(row)
 
             self._register_image_embedding_file()
-            # Todo: uncomment when above work
-            # Above registrations need to work for this to work
-            # register computation
+
             self._register_computation()
         finally:
             logutils.write_task_finish_json(outdir=self._outdir,

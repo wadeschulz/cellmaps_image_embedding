@@ -1,12 +1,17 @@
 import os
-
+import logging
 import cv2
+
 import numpy as np
 import torch
 from torch.utils.data.dataset import Dataset
+from cellmaps_utils import constants
 
 opj = os.path.join
 ope = os.path.exists
+
+
+logger = logging.getLogger(__name__)
 
 
 class ProteinDataset(Dataset):
@@ -24,9 +29,10 @@ class ProteinDataset(Dataset):
         self.crop_size = crop_size
         self.in_channels = in_channels
         if in_channels == 3:
-            self.colors = ["red", "green", "blue"]
+            self.colors = [constants.RED, constants.GREEN, constants.BLUE]
         elif in_channels == 4:
-            self.colors = ["red", "green", "blue", "yellow"]
+            self.colors = [constants.RED, constants.GREEN, constants.BLUE,
+                           constants.YELLOW]
         else:
             raise ValueError(in_channels)
         self.random_crop = False
@@ -63,9 +69,10 @@ class ProteinDataset(Dataset):
         return crop_image
 
     def read_rgby(self, image_id):
+
         image = [
             cv2.imread(
-                opj(self.image_dir, color, "%s_%s.%s" % (image_id, color, self.suffix)),
+                opj(self.image_dir, color, "%s_%s%s" % (image_id, color, self.suffix)),
                 cv2.IMREAD_GRAYSCALE,
             )
             for color in self.colors
@@ -75,7 +82,7 @@ class ProteinDataset(Dataset):
             print(self.image_dir, image_id)
 
         image = np.stack(image, axis=-1)
-
+        logger.info(str(image.shape))
         h, w = image.shape[:2]
         if self.image_size != h or self.image_size != w:
             image = cv2.resize(

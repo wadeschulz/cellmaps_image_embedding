@@ -1,14 +1,16 @@
 #! /usr/bin/env python
 
 import argparse
+import os
 import sys
 import logging
 import logging.config
 from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_image_embedding
-from cellmaps_image_embedding.runner import CellmapsImageEmbeddingRunner
+from cellmaps_image_embedding.runner import CellmapsImageEmbedder
 from cellmaps_image_embedding.runner import FakeEmbeddingGenerator
+from cellmaps_image_embedding.runner import DensenetEmbeddingGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -28,10 +30,15 @@ def _parse_arguments(desc, args):
                                      formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
     parser.add_argument('--inputdir', required=True,
-                        help='Directory where blue, red, yellow, and '
-                             'green image directories reside ')
-    parser.add_argument('--model_path', type=str, default='/opt/densenet/models/model.pth',
-                        help='Path to model file to use (set to one in container)')
+                        help='Directory with rocrate where blue, red, '
+                             'yellow, and green image directories reside')
+    parser.add_argument('--model_path', type=str,
+                        help='Path to model file. If unset, code will attempt to '
+                             'download model here: https://github.com/'
+                             'CellProfiling/densenet/releases/download/'
+                             'v0.1.0/external_crop512_focal_slov_hardlog'
+                             '_class_densenet121_dropout_i768_aug2_5folds'
+                             '_fold0_final.pth')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
@@ -44,7 +51,12 @@ def _parse_arguments(desc, args):
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
                              'in --input directory will be used')
-
+    parser.add_argument('--fake_embedder', action='store_true',
+                        help='If set, generate fake embedding')
+    parser.add_argument('--dimensions', default=1024, type=int,
+                        help='Dimensions of generated embedding vector')
+    parser.add_argument('--suffix', default='.jpg',
+                        help='Suffix for image files')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
                              'this format: https://docs.python.org/3/library/'
@@ -72,14 +84,14 @@ def main(args):
     :param args: arguments passed to command line usually :py:func:`sys.argv[1:]`
     :type args: list
 
-    :return: return value of :py:meth:`cellmaps_image_embedding.runner.CellmapsImageEmbeddingRunner.run`
+    :return: return value of :py:meth:`cellmaps_image_embedding.runner.CellmapsImageEmbedder.run`
              or ``2`` if an exception is raised
     :rtype: int
     """
     desc = """
 Version {version}
 
-Invokes run() method on CellmapsImageEmbeddingRunner
+Invokes run() method on CellmapsImageEmbedder
 
 
     """.format(version=cellmaps_image_embedding.__version__)
@@ -89,14 +101,22 @@ Invokes run() method on CellmapsImageEmbeddingRunner
 
     try:
         logutils.setup_cmd_logging(theargs)
-        gen = FakeEmbeddingGenerator(theargs.inputdir, dimensions=1024)
-        return CellmapsImageEmbeddingRunner(outdir=theargs.outdir,
-                                            inputdir=theargs.inputdir,
-                                            embedding_generator=gen,
-                                            name=theargs.name,
-                                            project_name=theargs.project_name,
-                                            organization_name=theargs.organization_name,
-                                            input_data_dict=theargs.__dict__).run()
+        if theargs.fake_embedder is True:
+            gen = FakeEmbeddingGenerator(theargs.inputdir,
+                                         dimensions=theargs.dimensions)
+        else:
+            gen = DensenetEmbeddingGenerator(os.path.abspath(theargs.inputdir),
+                                             dimensions=theargs.dimensions,
+                                             outdir=os.path.abspath(theargs.outdir),
+                                             model_path=theargs.model_path,
+                                             suffix=theargs.suffix)
+        return CellmapsImageEmbedder(outdir=theargs.outdir,
+                                     inputdir=theargs.inputdir,
+                                     embedding_generator=gen,
+                                     name=theargs.name,
+                                     project_name=theargs.project_name,
+                                     organization_name=theargs.organization_name,
+                                     input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))
         return 2
