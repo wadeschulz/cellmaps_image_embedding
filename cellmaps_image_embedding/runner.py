@@ -8,10 +8,7 @@ import logging
 import csv
 import random
 import warnings
-import pandas as pd
 import torch
-import torch.backends.cudnn as cudnn
-import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.nn import DataParallel
 from torch.utils.data import DataLoader
@@ -177,9 +174,9 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         """
 
         """
-        model = eval('class_densenet121_large_dropout')(num_classes=self._num_classes,
-                                                        in_channels=self._channels,
-                                                        pretrained=self._model_path)
+        model = class_densenet121_large_dropout(num_classes=self._num_classes,
+                                                in_channels=self._channels,
+                                                pretrained=self._model_path)
         model = DataParallel(model)
         model.to(self._device)
         model = model.eval()
