@@ -5,6 +5,7 @@ import torch.nn.functional as F
 from torch.nn import Parameter
 from torchvision.models import *
 
+
 class ArcMarginProduct(nn.Module):
     def __init__(self, in_features, out_features):
         super(ArcMarginProduct, self).__init__()
@@ -18,6 +19,7 @@ class ArcMarginProduct(nn.Module):
     def forward(self, features):
         cosine = F.linear(F.normalize(features), F.normalize(self.weight.cuda()))
         return cosine
+
 
 class ResnetClass(nn.Module):
     def load_pretrained(self, pretrained):
@@ -103,6 +105,7 @@ class ResnetClass(nn.Module):
 
         return feature
 
+
 def class_resnet50_dropout(num_classes=28, in_channels=4, pretrained=None):
     model = ResnetClass(
         backbone='resnet50',
@@ -111,6 +114,7 @@ def class_resnet50_dropout(num_classes=28, in_channels=4, pretrained=None):
         pretrained=pretrained
     )
     return model
+
 
 class DensenetClass(nn.Module):
     def load_pretrained(self, pretrained):
@@ -211,6 +215,7 @@ class DensenetClass(nn.Module):
         x = self.logit(feature)
         return x, feature
 
+
 def class_densenet121_dropout(num_classes=28, in_channels=4, pretrained=None):
     model = DensenetClass(
         backbone='densenet121',
@@ -219,6 +224,7 @@ def class_densenet121_dropout(num_classes=28, in_channels=4, pretrained=None):
         pretrained=pretrained
     )
     return model
+
 
 def class_densenet121_large_dropout(num_classes=28, in_channels=4, pretrained=None):
     model = DensenetClass(
