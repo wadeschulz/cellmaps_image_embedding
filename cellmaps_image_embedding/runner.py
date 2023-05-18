@@ -408,6 +408,7 @@ class CellmapsImageEmbedder(object):
             self._register_image_embedding_file()
 
             self._register_computation()
+            exitcode = 0
         finally:
             logutils.write_task_finish_json(outdir=self._outdir,
                                             start_time=self._start_time,
