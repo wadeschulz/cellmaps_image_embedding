@@ -267,8 +267,20 @@ class CellmapsImageEmbedder(object):
         """
         Constructor
 
-        :param exitcode: value to return via :py:meth:`.CellmapsImageEmbedder.run` method
-        :type int:
+        :param outdir: Directory to write the results of this tool
+        :type outdir: str
+        :param inputdir: Output directory from cellmaps_imagedownloader
+        :type inputdir: str
+        :param embedding_generator:
+        :param name:
+        :type name: str
+        :param organization_name:
+        :type organization_name: str
+        :param project_name:
+        :type project_name: str
+        :param input_data_dict:
+        :type input_data_dict: dict
+        :param provenance_utils:
         """
         logger.debug('In constructor')
         if outdir is None:

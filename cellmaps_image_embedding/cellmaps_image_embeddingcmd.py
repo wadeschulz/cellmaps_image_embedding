@@ -33,8 +33,9 @@ def _parse_arguments(desc, args):
                         help='Directory with rocrate where blue, red, '
                              'yellow, and green image directories reside')
     parser.add_argument('--model_path', type=str,
-                        help='Path to model file. If unset, code will attempt to '
-                             'download model here: https://github.com/'
+                        help='Path to model file. A model file to download '
+                             'is here: '
+                             'https://github.com/'
                              'CellProfiling/densenet/releases/download/'
                              'v0.1.0/external_crop512_focal_slov_hardlog'
                              '_class_densenet121_dropout_i768_aug2_5folds'
@@ -91,8 +92,15 @@ def main(args):
     desc = """
 Version {version}
 
-Invokes run() method on CellmapsImageEmbedder
+Generates image embeddings from immunofluorescent labeled images 
+from the Human Protein Atlas that were downloaded by the 
+cellmaps_imagedownloader package using Densenet code taken from:
+https://github.com/CellProfiling/densenet
 
+To use set --inputdir to output directory created by cellmaps_imagedownloader
+
+The generated embeddings are stored in image_emd.tsv under the output directory
+specified when running this tool. 
 
     """.format(version=cellmaps_image_embedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
