@@ -1,6 +1,6 @@
-========================
+=========================
 cellmaps_image_embedding
-========================
+=========================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
@@ -14,9 +14,7 @@ cellmaps_image_embedding
         :alt: Documentation Status
 
 
-
-
-Python Boilerplate contains all the boilerplate you need to create a Python package with command line
+A tool to generate embeddings from HPA IF images
 
 
 * Free software: MIT license
@@ -32,7 +30,7 @@ Dependencies
 Compatibility
 -------------
 
-* Python 3.3+
+* Python 3.8+
 
 Installation
 ------------
@@ -74,6 +72,7 @@ Output:
 
 For developers
 -------------------------------------------
+
 
 To deploy development versions of this package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

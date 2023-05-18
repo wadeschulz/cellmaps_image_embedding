@@ -9,12 +9,15 @@ from setuptools import setup, find_packages
 
 with open(os.path.join('cellmaps_image_embedding', '__init__.py')) as ver_file:
     for line in ver_file:
+        line = line.rstrip()
         if line.startswith('__version__'):
             version = re.sub("'", "", line[line.index("'"):])
         elif line.startswith('__description__'):
             desc = re.sub("'", "", line[line.index("'"):])
         elif line.startswith('__repo_url__'):
             repo_url = re.sub("'", "", line[line.index("'"):])
+
+print(repo_url)
 
 with open('README.rst') as readme_file:
     readme = readme_file.read()
