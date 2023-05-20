@@ -131,7 +131,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
     def __init__(self, inputdir, dimensions=1024,
                  outdir=None,
                  model_path=None,
-                 suffix='jpg'):
+                 suffix='.jpg'):
         """
         Constructor
 
