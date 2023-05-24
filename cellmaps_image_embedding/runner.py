@@ -245,7 +245,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
 
                         # features
                         features = features.cpu().data.numpy().tolist()
-                        row = [image_ids[iter_index]]
+                        row = [image_ids[iter_index] + '_']
                         row.extend(features[0])
                         del features
                         del logits
