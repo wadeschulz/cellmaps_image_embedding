@@ -98,6 +98,8 @@ cellmaps_imagedownloader package using Densenet code taken from:
 https://github.com/CellProfiling/densenet
 
 To use set --inputdir to output directory created by cellmaps_imagedownloader
+with red, blue, green, yellow directories containing images and FAIRSCAPE ro-crate
+configuration file (ro-crate-metadata.json)
 
 The generated embeddings are stored in image_emd.tsv under the output directory
 specified when running this tool. 
