@@ -24,6 +24,37 @@ from cellmaps_image_embedding.models import *
 
 logger = logging.getLogger(__name__)
 
+ABB_LABEL_INDEX = {
+    "0": "Nucleoplasm",
+    "1": "N. membrane",
+    "2": "Nucleoli",
+    "3": "N. fibrillar c.",
+    "4": "N. speckles",
+    "5": "N. bodies",
+    "6": "ER",
+    "7": "Golgi app.",
+    "8": "Peroxisomes",
+    "9": "Endosomes",
+    "10": "Lysosomes",
+    "11": "Int. fil.",
+    "12": "Actin fil.",
+    "13": "F. a. sites",
+    "14": "Microtubules",
+    "15": "M. ends",
+    "16": "Cyt. bridge",
+    "17": "Mitotic spindle",
+    "18": "MTOC",
+    "19": "Centrosome",
+    "20": "Lipid droplets",
+    "21": "PM",
+    "22": "C. Junctions",
+    "23": "Mitochondria",
+    "24": "Aggresome",
+    "25": "Cytosol",
+    "26": "C. bodies",
+    "27": "Rods & Rings"
+}
+
 
 class EmbeddingGenerator(object):
     """
@@ -115,8 +146,10 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         """
         for image_id in self._get_image_id_list():
             row = [image_id]
-            row.extend([random.random() for x in range(0, self.get_dimensions())])
-            yield row
+            row.extend([random.random() for x in range(0, self.get_dimensions())]) ## check on the range of embeddings
+            prob = [image_id]
+            prob.extend([random.random() for x in range(0,len(ABB_LABEL_INDEX.keys()))]) ## might need to add to one
+            yield row, prob
 
 
 class DensenetEmbeddingGenerator(EmbeddingGenerator):
@@ -240,8 +273,9 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         logits, features = self._model(images)
 
                         # probabilities
-                        # probs = F.sigmoid(logits)
-                        # prob_list += probs.cpu().data.numpy().tolist()
+                        probs = F.sigmoid(logits)
+                        prob_list = [image_ids[iter_index] +'_']
+                        prob_list.extend(probs.cpu().data.numpy().tolist()[0])
 
                         # features
                         features = features.cpu().data.numpy().tolist()
@@ -249,7 +283,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         row.extend(features[0])
                         del features
                         del logits
-                        yield row
+                        yield row, prob_list
 
 
 class CellmapsImageEmbedder(object):
@@ -377,6 +411,13 @@ class CellmapsImageEmbedder(object):
         """
         return os.path.join(self._outdir, constants.IMAGE_EMBEDDING_FILE)
 
+    def get_image_probability_file(self):
+        """
+        Gets image probability file
+        :return:
+        """
+        return os.path.join(self._outdir, "labels_prob.tsv")
+
     def run(self):
         """
         Runs cellmaps_image_embedding
@@ -410,12 +451,19 @@ class CellmapsImageEmbedder(object):
 
             # generate result
             with open(self.get_image_embedding_file(), 'w', newline='') as f:
-                writer = csv.writer(f, delimiter='\t')
-                header_line = ['']
-                header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
-                writer.writerow(header_line)
-                for row in self._embedding_generator.get_next_embedding():
-                    writer.writerow(row)
+                with open(self.get_image_probability_file(), 'w', newline='') as pf:
+                    writer = csv.writer(f, delimiter='\t')
+                    prob_writer = csv.writer(pf, delimiter='\t')
+                    header_line = ['']
+                    header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
+                    writer.writerow(header_line)
+                    header_line_prob = ['']
+                    for key in range(0,len(ABB_LABEL_INDEX.keys())):
+                        header_line_prob.append(ABB_LABEL_INDEX[str(key)])
+                    prob_writer.writerow(header_line_prob)
+                    for row, prob_list in self._embedding_generator.get_next_embedding():
+                        writer.writerow(row)
+                        prob_writer.writerow(prob_list)
 
             self._register_image_embedding_file()
 
