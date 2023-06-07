@@ -189,6 +189,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         """
         dataset = ProteinDataset(
             self._inputdir,
+            self._outdir,
             image_size=self._image_size,
             crop_size=self._crop_size,
             in_channels=self._channels,
@@ -323,6 +324,23 @@ class CellmapsImageEmbedder(object):
         except KeyError as ke:
             raise CellMapsImageEmbeddingError('Key missing in provenance: ' + str(ke))
 
+    def _create_output_directory(self):
+        """
+        Creates output directory if it does not already exist
+
+        :raises CellmapsDownloaderError: If output directory is None or if directory already exists
+        """
+        if os.path.isdir(self._outdir):
+            raise CellMapsImageEmbeddingError(self._outdir + ' already exists')
+
+        os.makedirs(self._outdir, mode=0o755)
+        for cur_color in constants.COLORS:
+            cdir = os.path.join(self._outdir, cur_color + '_resize')
+            if not os.path.isdir(cdir):
+                logger.debug('Creating directory: ' + cdir)
+                os.makedirs(cdir,
+                            mode=0o755)
+
     def _register_software(self):
         """
         Registers this tool
@@ -387,12 +405,7 @@ class CellmapsImageEmbedder(object):
         exitcode = 99
         try:
             logger.debug('In run method')
-
-            if os.path.isdir(self._outdir):
-                raise CellMapsImageEmbeddingError(self._outdir + ' already exists')
-
-            if not os.path.isdir(self._outdir):
-                os.makedirs(self._outdir, mode=0o755)
+            self._create_output_directory()
 
             logutils.setup_filelogger(outdir=self._outdir,
                                       handlerprefix='cellmaps_image_embedding')
