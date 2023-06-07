@@ -25,7 +25,17 @@ A tool to generate embeddings from HPA IF images
 Dependencies
 ------------
 
-* TODO add
+* `cellmaps_utils <https://pypi.org/project/cellmaps-utils>`__
+* `tqdm <https://pypi.org/project/tqdm>`__
+* `numpy <https://pypi.org/project/numpy>`__
+* `pandas>=0.23.1 <https://pypi.org/project/pandas>`__
+* `torch <https://pypi.org/project/torch>`__
+* `torchvision <https://pypi.org/project/torchvision>`__
+* `opencv-python <https://pypi.org/project/opencv-python>`__
+* `mlcrate <https://pypi.org/project/mlcrate>`__
+* `scikit-image <https://pypi.org/project/scikit-image>`__
+* `scikit-learn>=0.19.0 <https://pypi.org/project/scikit-learn>`__
+* `Pillow <https://pypi.org/project/Pillow>`__
 
 Compatibility
 -------------

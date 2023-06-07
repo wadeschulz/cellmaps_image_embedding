@@ -27,7 +27,6 @@ with open('HISTORY.rst') as history_file:
 
 requirements = ['cellmaps_utils',
                 'tqdm',
-                'pillow',
                 'numpy',
                 'pandas>0.23.1',
                 'torch',
@@ -35,7 +34,8 @@ requirements = ['cellmaps_utils',
                 'opencv-python',
                 'mlcrate',
                 'scikit-image',
-                'scikit-learn>=0.19.0']
+                'scikit-learn>=0.19.0',
+                'Pillow']
 
 setup_requirements = []
 
