@@ -4,7 +4,7 @@
 
 __author__ = """Gege Qian"""
 __email__ = 'geqian@ucsd.edu'
-__version__ = '0.1.0a5'
+__version__ = '0.1.0a6'
 __repo_url__ = 'https://github.com/idekerlab/cellmaps_image_embedding'
 __description__ = 'A tool to generate embeddings from HPA IF images'
 
