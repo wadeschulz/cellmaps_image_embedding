@@ -40,7 +40,7 @@ Installation
    git clone https://github.com/idekerlab/cellmaps_image_embedding
    cd cellmaps_image_embedding
    make dist
-   pip install dist/cellmaps_image_embeddingcmd*whl
+   pip install dist/cellmaps_image_embedding*whl
 
 
 Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
