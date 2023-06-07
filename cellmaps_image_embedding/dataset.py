@@ -1,6 +1,7 @@
 import os
 import logging
 import cv2
+from PIL import Image
 
 import numpy as np
 import torch
@@ -16,11 +17,11 @@ logger = logging.getLogger(__name__)
 
 class ProteinDataset(Dataset):
     def __init__(
-        self, image_dir, image_size=512, crop_size=0, in_channels=4, suffix="png",
+        self, image_dir, outdir, image_size=512, crop_size=0, in_channels=4, suffix="png",
         alt_image_ids=None,
     ):
         self.image_dir = image_dir
-
+        self.outdir = outdir
         self.suffix = suffix
 
         self.transform = None
@@ -45,16 +46,20 @@ class ProteinDataset(Dataset):
             # should we get image names from all color directories
             # and then let sort uniq do its work or do we assume we are good?
             image_names = os.listdir(os.path.join(self.image_dir, 'red'))
-
             # eg. ffd91122-bad0-11e8-b2b8-ac1f6b6435d0_red.png -> ffd91122-bad0-11e8-b2b8-ac1f6b6435d0
             self.image_ids = np.sort(
                 np.unique(
-                    [image_name[: image_name.rfind("_")] for image_name in image_names]
+                    [image_name[: image_name.rfind("_")] for image_name in image_names if self.accepted_image(image_name)]
                 )
             )
 
         self.num = len(self.image_ids)
 
+    def accepted_image(self, image_name):
+        if '.jpg' in image_name:
+            return True
+        return False
+        
     def set_transform(self, transform=None):
         self.transform = transform
 
@@ -69,10 +74,24 @@ class ProteinDataset(Dataset):
         return crop_image
 
     def read_rgby(self, image_id):
+        # resize image
+        for color in self.colors:
+            try:
+                image = np.array(Image.open(
+                    opj(self.image_dir, color, "%s_%s%s" % (image_id, color, self.suffix))))[:, :, constants.COLOR_INDEXS.get(color)]
 
+            except: 
+                print('bad image : %s' % image_id)
+                image = cv2.imread(opj(self.image_dir, color, "%s_%s%s" % (image_id, color, self.suffix)))[:, :, -1::-1][:, :, constants.COLOR_INDEXS.get(color)]
+            
+            h, w = image.shape[:2]
+            if h != self.image_size or w != self.image_size:
+                image = cv2.resize(image, (self.image_size, self.image_size), interpolation=cv2.INTER_LINEAR)
+            cv2.imwrite(opj(self.outdir, color + '_resize', "%s_%s%s" % (image_id, color, self.suffix)), image,  [int(cv2.IMWRITE_JPEG_QUALITY), 85])
+            
         image = [
             cv2.imread(
-                opj(self.image_dir, color, "%s_%s%s" % (image_id, color, self.suffix)),
+                opj(self.outdir, color + '_resize', "%s_%s%s" % (image_id, color, self.suffix)),
                 cv2.IMREAD_GRAYSCALE,
             )
             for color in self.colors
@@ -80,7 +99,7 @@ class ProteinDataset(Dataset):
 
         if image[0] is None:
             print(self.image_dir, image_id)
-
+        
         image = np.stack(image, axis=-1)
         logger.info(str(image.shape))
         h, w = image.shape[:2]
