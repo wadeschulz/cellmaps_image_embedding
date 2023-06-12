@@ -93,7 +93,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
     Fakes image embedding
     """
     def __init__(self, inputdir, dimensions=1024,
-                 suffix='.jpg'):
+                 suffix='.jpg', img_emd_translator=None):
         """
         Constructor
 
@@ -108,6 +108,8 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         super().__init__(dimensions=dimensions)
         self._inputdir = inputdir
         self._suffix = suffix
+        if img_emd_translator is None:
+            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir, fold=1)
         warnings.warn(constants.IMAGE_EMBEDDING_FILE +
                       ' contains FAKE DATA!!!!\n'
                       'You have been warned\nHave a nice day\n')
@@ -145,9 +147,13 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         :rtype: list
         """
         for image_id in self._get_image_id_list():
-            row = [image_id]
+            if image_id not in self._img_emd_translator.get_name_mapping():
+                continue
+            g =  self._img_emd_translator.get_name_mapping()[image_id]
+
+            row = [g]
             row.extend([random.random() for x in range(0, self.get_dimensions())]) ## check on the range of embeddings
-            prob = [image_id]
+            prob = [g]
             prob.extend([random.random() for x in range(0,len(ABB_LABEL_INDEX.keys()))]) ## might need to add to one
             yield row, prob
 
@@ -164,7 +170,9 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
     def __init__(self, inputdir, dimensions=1024,
                  outdir=None,
                  model_path=None,
-                 suffix='.jpg'):
+                 suffix='.jpg',
+                 fold = 1,
+                 img_emd_translator=None):
         """
         Constructor
 
@@ -184,10 +192,12 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         :type model_path: str
         :param suffix: Image suffix with starting ``.``
         :type suffix: str
+        :param img_emd_translator:
         """
         super().__init__(dimensions=dimensions)
         self._outdir = outdir
         self._inputdir = inputdir
+        self.fold = fold
         self._gpus = ''
         self._image_size = 1536
         self._crop_size = 1024
@@ -202,6 +212,10 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         self._model = self._initialize_model()
         self._dataset = self._initialize_dataset()
         self._dataloader = self._initialize_dataloader()
+        if img_emd_translator is None:
+            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir, fold=fold)
+
+
 
     def _initialize_model(self):
         """
@@ -273,20 +287,63 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                             images = Variable(images)
                         logits, features = self._model(images)
 
+                        image_id = image_ids[iter_index] + '_'
+                        if image_id not in self._img_emd_translator.get_name_mapping():
+                            continue
+                        g =  self._img_emd_translator.get_name_mapping()[image_id]
                         # probabilities
                         probs = F.sigmoid(logits)
-                        prob_list = [image_ids[iter_index] +'_']
+                        prob_list = [g]
                         prob_list.extend(probs.cpu().data.numpy().tolist()[0])
 
                         # features
                         features = features.cpu().data.numpy().tolist()
-                        row = [image_ids[iter_index] + '_']
+                        row = [g]
                         row.extend(features[0])
                         del features
                         del logits
                         yield row, prob_list
 
 
+
+class ImageEmbeddingFilterAndNameTranslator(object):
+    """
+    Converts image embedding names and filters keeping only
+    one per gene
+
+    """
+
+    def __init__(self, image_downloaddir=None, fold = 1):
+        """
+        Constructor
+        """
+        self._id_to_gene_mapping = self._gen_filtered_mapping(os.path.join(image_downloaddir, str(fold) + '_' +
+                                                                           constants.IMAGE_GENE_NODE_ATTR_FILE))
+
+    def _gen_filtered_mapping(self, image_gene_node_attrs_file):
+        """
+        Reads TSV file
+
+        :param image_gene_node_attrs_file:
+        :return:
+        """
+        mapping_dict = {}
+        with open(image_gene_node_attrs_file, 'r') as f:
+            reader = csv.DictReader(f, delimiter='\t')
+            for row in reader:
+                mapping_dict[row['filename'].split(',')[0]] = row['name']
+        return mapping_dict
+
+    def get_name_mapping(self):
+        """
+        Gets mapping of old name to new name
+
+        :return: mapping of old name to new name
+        :rtype: dict
+        """
+        return self._id_to_gene_mapping
+                        
+                        
 class CellmapsImageEmbedder(object):
     """
     Class to run algorithm
@@ -316,6 +373,7 @@ class CellmapsImageEmbedder(object):
         :param input_data_dict:
         :type input_data_dict: dict
         :param provenance_utils:
+
         """
         logger.debug('In constructor')
         if outdir is None:
@@ -331,7 +389,7 @@ class CellmapsImageEmbedder(object):
         self._softwareid = None
         self._input_data_dict = input_data_dict
         self._image_embedding = None
-
+     
     def _create_rocrate(self):
         """
         Creates rocrate for output directory
@@ -435,7 +493,14 @@ class CellmapsImageEmbedder(object):
         :return:
         """
         return os.path.join(self._outdir, "labels_prob.tsv")
+    
+    def get_name_mapping(self):
+        """
 
+        :return:
+        """
+        return self._img_emd_translator.get_oldname_to_new_name_mapping()
+    
     def run(self):
         """
         Runs cellmaps_image_embedding
@@ -463,6 +528,7 @@ class CellmapsImageEmbedder(object):
             self._register_software()
 
             # generate result
+            raw_embeddings = []
             with open(self.get_image_embedding_file(), 'w', newline='') as f:
                 with open(self.get_image_probability_file(), 'w', newline='') as pf:
                     writer = csv.writer(f, delimiter='\t')
@@ -476,8 +542,9 @@ class CellmapsImageEmbedder(object):
                     prob_writer.writerow(header_line_prob)
                     for row, prob_list in self._embedding_generator.get_next_embedding():
                         writer.writerow(row)
+                        raw_embeddings.append(row)
                         prob_writer.writerow(prob_list)
-
+ 
             self._register_image_embedding_file()
 
             self._register_computation()

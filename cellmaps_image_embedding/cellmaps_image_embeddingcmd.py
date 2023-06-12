@@ -52,6 +52,7 @@ def _parse_arguments(desc, args):
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
                              'in --input directory will be used')
+    parser.add_argument('--fold', default=1, type=int, help='Image node attribute file fold to use')
     parser.add_argument('--fake_embedder', action='store_true',
                         help='If set, generate fake embedding')
     parser.add_argument('--dimensions', default=1024, type=int,
@@ -119,7 +120,8 @@ specified when running this tool.
                                              dimensions=theargs.dimensions,
                                              outdir=os.path.abspath(theargs.outdir),
                                              model_path=theargs.model_path,
-                                             suffix=theargs.suffix)
+                                             suffix=theargs.suffix,
+                                             fold=theargs.fold)
         return CellmapsImageEmbedder(outdir=theargs.outdir,
                                      inputdir=theargs.inputdir,
                                      embedding_generator=gen,

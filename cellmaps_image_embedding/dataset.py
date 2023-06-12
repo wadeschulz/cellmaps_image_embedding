@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class ProteinDataset(Dataset):
     def __init__(
-        self, image_dir, outdir, image_size=512, crop_size=0, in_channels=4, suffix="png",
+        self, image_dir, outdir, image_size=512, crop_size=0, in_channels=4, suffix=".jpg",
         alt_image_ids=None,
     ):
         self.image_dir = image_dir
@@ -49,16 +49,11 @@ class ProteinDataset(Dataset):
             # eg. ffd91122-bad0-11e8-b2b8-ac1f6b6435d0_red.png -> ffd91122-bad0-11e8-b2b8-ac1f6b6435d0
             self.image_ids = np.sort(
                 np.unique(
-                    [image_name[: image_name.rfind("_")] for image_name in image_names if self.accepted_image(image_name)]
+                    [image_name[: image_name.rfind("_")] for image_name in image_names if image_name.endswith(self.suffix)]
                 )
             )
 
         self.num = len(self.image_ids)
-
-    def accepted_image(self, image_name):
-        if '.jpg' in image_name:
-            return True
-        return False
         
     def set_transform(self, transform=None):
         self.transform = transform
