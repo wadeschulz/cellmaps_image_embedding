@@ -16,6 +16,10 @@ with open(os.path.join('cellmaps_image_embedding', '__init__.py')) as ver_file:
             desc = re.sub("'", "", line[line.index("'"):])
         elif line.startswith('__repo_url__'):
             repo_url = re.sub("'", "", line[line.index("'"):])
+        elif line.startswith('__author__'):
+            author = re.sub("'", "", line[line.index("'"):])
+        elif line.startswith('__email__'):
+            email = re.sub("'", "", line[line.index("'"):])
 
 print(repo_url)
 
@@ -42,8 +46,8 @@ setup_requirements = []
 test_requirements = []
 
 setup(
-    author="Ideker Lab CM4AI team",
-    author_email='tools@cm4ai.org',
+    author=author,
+    author_email=email,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
