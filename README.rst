@@ -1,6 +1,6 @@
-=========================
-cellmaps_image_embedding
-=========================
+=============================================
+Cell Maps ImmunoFluorescent Image Embedder
+=============================================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
@@ -14,13 +14,11 @@ cellmaps_image_embedding
         :alt: Documentation Status
 
 
-A tool to generate embeddings from HPA IF images
-
+Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas <https://www.proteinatlas.org/>`__
+for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 * Free software: MIT license
 * Documentation: https://cellmaps-image-embedding.readthedocs.io.
-
-
 
 Dependencies
 ------------

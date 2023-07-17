@@ -1,5 +1,6 @@
-Welcome to cellmaps_image_embedding's documentation!
-================================================================
+=============================================
+Cell Maps ImmunoFluorescent Image Embedder
+=============================================
 
 
 .. image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
@@ -8,15 +9,8 @@ Welcome to cellmaps_image_embedding's documentation!
 .. image:: https://img.shields.io/travis/idekerlab/cellmaps_image_embedding.svg
         :target: https://travis-ci.com/idekerlab/cellmaps_image_embedding
 
-.. image:: https://readthedocs.org/projects/cellmaps-image-embedding/badge/?version=latest
-        :target: https://cellmaps-image-embedding.readthedocs.io/en/latest/?badge=latest
-        :alt: Documentation Status
-
-
-
-
-Python Boilerplate contains all the boilerplate you need to create a Python package with command line
-
+Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas <https://www.proteinatlas.org/>`__
+for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 * Free software: MIT license
 
