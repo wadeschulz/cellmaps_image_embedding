@@ -4,6 +4,7 @@ import os
 import sys
 import time
 from datetime import date
+import numpy as np
 import logging
 import csv
 import random
@@ -152,7 +153,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
             g =  self._img_emd_translator.get_name_mapping()[image_id]
 
             row = [g]
-            row.extend([random.random() for x in range(0, self.get_dimensions())]) ## check on the range of embeddings
+            row.extend(np.random.normal(size=self.get_dimensions())) # sample normal distribution
             prob = [g]
             prob.extend([random.random() for x in range(0,len(ABB_LABEL_INDEX.keys()))]) ## might need to add to one
             yield row, prob
