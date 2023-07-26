@@ -153,9 +153,9 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
             g =  self._img_emd_translator.get_name_mapping()[image_id]
 
             row = [g]
-            row.extend(np.random.normal(size=self.get_dimensions())) # sample normal distribution
+            row.extend(np.random.normal(size=self.get_dimensions()))  # sample normal distribution
             prob = [g]
-            prob.extend([random.random() for x in range(0,len(ABB_LABEL_INDEX.keys()))]) ## might need to add to one
+            prob.extend([random.random() for x in range(0, len(ABB_LABEL_INDEX.keys()))])  # might need to add to one
             yield row, prob
 
 
@@ -214,9 +214,8 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         self._dataset = self._initialize_dataset()
         self._dataloader = self._initialize_dataloader()
         if img_emd_translator is None:
-            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir, fold=fold)
-
-
+            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir,
+                                                                             fold=fold)
 
     def _initialize_model(self):
         """
