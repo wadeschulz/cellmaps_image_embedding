@@ -221,9 +221,9 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         self._num_classes = 28
         self._seeds = [0]
         self._augments = ['default']
-        self._model = self._initialize_model()
-        self._dataset = self._initialize_dataset()
-        self._dataloader = self._initialize_dataloader()
+        self._model = None
+        self._dataset = None
+        self._dataloader = None
 
         if img_emd_translator is None:
             self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir,
@@ -283,7 +283,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         :rtype: str
         """
         dest_file = os.path.abspath(os.path.join(self._outdir, 'model.pth'))
-        self._update_fairscape_dataset_tuples(dest_file=dest_file,
+        self._update_fairscape_dataset_tuples(dest_model=dest_file,
                                               src_url=model_path)
         if os.path.isfile(model_path):
             shutil.copy(model_path, dest_file)
@@ -321,7 +321,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
                      'date-published': date.today().strftime('%m-%d-%Y')}
-        self._fairscape_dataset_tuples.append(data_dict, dest_model)
+        self._fairscape_dataset_tuples.append((data_dict, dest_model))
 
     def get_next_embedding(self):
         """
