@@ -33,13 +33,8 @@ def _parse_arguments(desc, args):
                         help='Directory with rocrate where blue, red, '
                              'yellow, and green image directories reside')
     parser.add_argument('--model_path', type=str,
-                        help='Path to model file. A model file to download '
-                             'is here: '
-                             'https://github.com/'
-                             'CellProfiling/densenet/releases/download/'
-                             'v0.1.0/external_crop512_focal_slov_hardlog'
-                             '_class_densenet121_dropout_i768_aug2_5folds'
-                             '_fold0_final.pth')
+                        default='https://github.com/CellProfiling/densenet/releases/download/v0.1.0/external_crop512_focal_slov_hardlog_class_densenet121_dropout_i768_aug2_5folds_fold0_final.pth',
+                        help='URL or path to model file for image embedding')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
