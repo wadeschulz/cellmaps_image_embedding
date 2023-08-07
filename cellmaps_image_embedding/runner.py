@@ -4,11 +4,12 @@ import os
 import sys
 import time
 from datetime import date
-import numpy as np
 import logging
+import shutil
 import csv
 import random
 import warnings
+import requests
 import torch
 from torch.autograd import Variable
 from torch.nn import DataParallel
@@ -67,6 +68,7 @@ class EmbeddingGenerator(object):
         Constructor
         """
         self._dimensions = dimensions
+        self._fairscape_dataset_tuples = []
 
     def get_dimensions(self):
         """
@@ -87,6 +89,15 @@ class EmbeddingGenerator(object):
         :rtype: list
         """
         raise NotImplementedError('Subclasses should implement')
+
+    def get_datasets_that_need_to_be_registered(self):
+        """
+        Gets any datasets that need to be registered with FAIRSCAPE
+
+        :return: list of tuples in format of (dict, filepath as str)
+        :rtype: list
+        """
+        return self._fairscape_dataset_tuples
 
 
 class FakeEmbeddingGenerator(EmbeddingGenerator):
@@ -150,7 +161,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         for image_id in self._get_image_id_list():
             if image_id not in self._img_emd_translator.get_name_mapping():
                 continue
-            g =  self._img_emd_translator.get_name_mapping()[image_id]
+            g = self._img_emd_translator.get_name_mapping()[image_id]
 
             row = [g]
             row.extend(np.random.normal(size=self.get_dimensions()))  # sample normal distribution
@@ -172,7 +183,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                  outdir=None,
                  model_path=None,
                  suffix='.jpg',
-                 fold = 1,
+                 fold=1,
                  img_emd_translator=None):
         """
         Constructor
@@ -204,7 +215,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         self._crop_size = 1024
         self._device = 'cpu'
         self._cuda_available = False
-        self._model_path = os.path.abspath(model_path)
+        self._model_path = model_path
         self._suffix = suffix
         self._channels = 4
         self._num_classes = 28
@@ -213,6 +224,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         self._model = self._initialize_model()
         self._dataset = self._initialize_dataset()
         self._dataloader = self._initialize_dataloader()
+
         if img_emd_translator is None:
             self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir,
                                                                              fold=fold)
@@ -259,6 +271,58 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         )
         return dataloader
 
+    def _download_model(self, model_path):
+        """
+        If model_path is a URL attempt to download it
+        to pipeline directory, otherwise return as is
+
+        :param model_path: URL or file path to model file needed
+                           for image embedding
+        :type model_path: str
+        :return: path to model file
+        :rtype: str
+        """
+        dest_file = os.path.abspath(os.path.join(self._outdir, 'model.pth'))
+        self._update_fairscape_dataset_tuples(dest_file=dest_file,
+                                              src_url=model_path)
+        if os.path.isfile(model_path):
+            shutil.copy(model_path, dest_file)
+            return dest_file
+
+        with requests.get(model_path,
+                          stream=True) as r:
+            content_size = int(r.headers.get('content-length', 0))
+            tqdm_bar = tqdm(desc='Downloading ' + os.path.basename(model_path),
+                            total=content_size,
+                            unit='B', unit_scale=True,
+                            unit_divisor=1024)
+            logger.debug('Downloading ' + str(model_path) +
+                         ' of size ' + str(content_size) +
+                         'b to ' + dest_file)
+            try:
+                r.raise_for_status()
+                with open(dest_file, 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+                        tqdm_bar.update(len(chunk))
+            finally:
+                tqdm_bar.close()
+        return dest_file
+
+    def _update_fairscape_dataset_tuples(self, dest_model=None, src_url=None):
+        """
+        Registers model.pth file with create as a dataset
+
+        """
+        data_dict = {'name': 'Densenet model file',
+                     'description': 'Trained Densenet model used for classification of IF images'
+                                    ' from ' + str(src_url),
+                     'data-format': 'pth',
+                     'author': cellmaps_image_embedding.__name__,
+                     'version': cellmaps_image_embedding.__version__,
+                     'date-published': date.today().strftime('%m-%d-%Y')}
+        self._fairscape_dataset_tuples.append(data_dict, dest_model)
+
     def get_next_embedding(self):
         """
         Generator method for getting next embedding.
@@ -266,6 +330,11 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         :return: Embedding vector with 1st element
         :rtype: list
         """
+        self._model_path = self._download_model(self._model_path)
+        self._model = self._initialize_model()
+        self._dataset = self._initialize_dataset()
+        self._dataloader = self._initialize_dataloader()
+
         for seed in self._seeds:
             for augment in self._augments:
                 np.random.seed(seed)
@@ -290,7 +359,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         image_id = image_ids[iter_index] + '_'
                         if image_id not in self._img_emd_translator.get_name_mapping():
                             continue
-                        g =  self._img_emd_translator.get_name_mapping()[image_id]
+                        g = self._img_emd_translator.get_name_mapping()[image_id]
                         # probabilities
                         probs = F.sigmoid(logits)
                         prob_list = [g]
@@ -304,6 +373,23 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         del logits
                         yield row, prob_list
 
+    def get_datasets_that_need_to_be_registered(self):
+        """
+        Gets model.pth dataset that needs to be registered with FAIRSCAPE.
+
+        .. warning::
+
+            Must not be called before invocation of :meth:`~cellmaps_image_embedding.runner.DensenetEmbeddingGenerator.get_next_embedding`
+
+        :raises CellMapsImageEmbeddingError: If this method is called before at least one
+                                             invocation of :meth:`~cellmaps_image_embedding.runner.DensenetEmbeddingGenerator.get_next_embedding`
+        :return: list of tuples in format of (dict, filepath as str)
+        :rtype: list
+        """
+        if len(self._fairscape_dataset_tuples) == 0:
+            raise CellMapsImageEmbeddingError('get_next_embedding must be called at least '
+                                              'once before invoking this method')
+        return self._fairscape_dataset_tuples
 
 
 class ImageEmbeddingFilterAndNameTranslator(object):
@@ -313,7 +399,7 @@ class ImageEmbeddingFilterAndNameTranslator(object):
 
     """
 
-    def __init__(self, image_downloaddir=None, fold = 1):
+    def __init__(self, image_downloaddir=None, fold=1):
         """
         Constructor
         """
@@ -332,6 +418,8 @@ class ImageEmbeddingFilterAndNameTranslator(object):
             reader = csv.DictReader(f, delimiter='\t')
             for row in reader:
                 mapping_dict[row['filename'].split(',')[0]] = row['name']
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug('Mapping dict: ' + str(mapping_dict))
         return mapping_dict
 
     def get_name_mapping(self):
@@ -342,7 +430,7 @@ class ImageEmbeddingFilterAndNameTranslator(object):
         :rtype: dict
         """
         return self._id_to_gene_mapping
-                        
+
                         
 class CellmapsImageEmbedder(object):
     """
@@ -388,7 +476,7 @@ class CellmapsImageEmbedder(object):
         self._embedding_generator = embedding_generator
         self._softwareid = None
         self._input_data_dict = input_data_dict
-        self._image_embedding = None
+        self._generated_dataset_ids = []
      
     def _create_rocrate(self):
         """
@@ -462,7 +550,7 @@ class CellmapsImageEmbedder(object):
                                                     description='run of ' + cellmaps_image_embedding.__name__,
                                                     used_software=[self._softwareid],
                                                     used_dataset=[input_dataset_id],
-                                                    generated=[self._image_embedding])
+                                                    generated=self._generated_dataset_ids)
 
     def _register_image_embedding_file(self):
         """
@@ -475,10 +563,24 @@ class CellmapsImageEmbedder(object):
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
                      'date-published': date.today().strftime('%m-%d-%Y')}
-        self._image_embedding = self._provenance_utils.register_dataset(self._outdir,
-                                                                        source_file=self.get_image_embedding_file(),
-                                                                        data_dict=data_dict,
-                                                                        skip_copy=True)
+        dset_id = self._provenance_utils.register_dataset(self._outdir,
+                                                          source_file=self.get_image_embedding_file(),
+                                                          data_dict=data_dict,
+                                                          skip_copy=True)
+        self._generated_dataset_ids.append(dset_id)
+
+    def _register_embedding_generator_datasets(self):
+        """
+
+        :return:
+        """
+        for dset_tuple in self._embedding_generator.get_datasets_that_need_to_be_registered():
+            dset_id = self._provenance_utils.register_dataset(self._outdir,
+                                                              source_file=dset_tuple[1],
+                                                              data_dict=dset_tuple[0],
+                                                              skip_copy=True)
+            logger.debug('Adding embedding_generator dataset to fairscape: ' + str(dset_tuple))
+            self._generated_dataset_ids.append(dset_id)
 
     def get_image_embedding_file(self):
         """
@@ -546,6 +648,7 @@ class CellmapsImageEmbedder(object):
                         prob_writer.writerow(prob_list)
  
             self._register_image_embedding_file()
+            self._register_embedding_generator_datasets()
 
             self._register_computation()
             exitcode = 0
