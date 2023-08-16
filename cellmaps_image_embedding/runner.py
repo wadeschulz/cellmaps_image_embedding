@@ -63,11 +63,12 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
-    def __init__(self, dimensions=1024):
+    def __init__(self, dimensions=1024, fold=1):
         """
         Constructor
         """
         self._dimensions = dimensions
+        self._fold = fold
         self._fairscape_dataset_tuples = []
 
     def get_dimensions(self):
@@ -78,6 +79,14 @@ class EmbeddingGenerator(object):
         :rtype: int
         """
         return self._dimensions
+
+    def get_fold(self):
+        """
+        Gets fold
+        :return:
+        :rtype: int
+        """
+        return self._fold
 
     def get_next_embedding(self):
         """
@@ -104,7 +113,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
     """
     Fakes image embedding
     """
-    def __init__(self, inputdir, dimensions=1024,
+    def __init__(self, inputdir, dimensions=1024, fold=1,
                  suffix='.jpg', img_emd_translator=None):
         """
         Constructor
@@ -117,11 +126,11 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
         :param suffix: Image suffix with starting ``.``
         :type suffix: str
         """
-        super().__init__(dimensions=dimensions)
+        super().__init__(dimensions=dimensions, fold=fold)
         self._inputdir = inputdir
         self._suffix = suffix
         if img_emd_translator is None:
-            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir, fold=1)
+            self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir, fold=fold)
         warnings.warn(constants.IMAGE_EMBEDDING_FILE +
                       ' contains FAKE DATA!!!!\n'
                       'You have been warned\nHave a nice day\n')
@@ -206,10 +215,9 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
         :type suffix: str
         :param img_emd_translator:
         """
-        super().__init__(dimensions=dimensions)
+        super().__init__(dimensions=dimensions, fold=fold)
         self._outdir = outdir
         self._inputdir = inputdir
-        self.fold = fold
         self._gpus = ''
         self._image_size = 1536
         self._crop_size = 1024
@@ -227,7 +235,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
 
         if img_emd_translator is None:
             self._img_emd_translator = ImageEmbeddingFilterAndNameTranslator(image_downloaddir=inputdir,
-                                                                             fold=fold)
+                                                                             fold=self._fold)
 
     def _initialize_model(self):
         """
@@ -318,6 +326,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                      'description': 'Trained Densenet model used for classification of IF images'
                                     ' from ' + str(src_url),
                      'data-format': 'pth',
+                     'keywords': ['Trained Densenet model', 'pytorch', 'classification'],
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
                      'date-published': date.today().strftime('%m-%d-%Y')}
@@ -477,28 +486,51 @@ class CellmapsImageEmbedder(object):
         self._softwareid = None
         self._input_data_dict = input_data_dict
         self._generated_dataset_ids = []
-     
+        self._keywords = None
+        self._description = None
+
+    def _update_provenance_fields(self):
+        """
+
+        :return:
+        """
+        name, proj_name, org_name, description, keywords = self._provenance_utils.get_name_project_org_keyword_description_of_rocrate(
+            self._inputdir)
+
+        if self._name is None:
+            self._name = name
+
+        if self._organization_name is None:
+            self._organization_name = org_name
+
+        if self._project_name is None:
+            self._project_name = proj_name
+
+        # just grab 1st five elements assuming they are
+        # project, data_release_name, cell line, treatment,
+        # name_of_computation
+        if keywords is not None and len(keywords) >= 4:
+            self._keywords = keywords[:4]
+        else:
+            self._keywords = keywords
+
+        self._keywords.extend(['IF Image Embedding', 'IF microscopy images', 'embedding'])
+
+        self._description = ' '.join(self._keywords)
+
     def _create_rocrate(self):
         """
         Creates rocrate for output directory
 
         :raises CellMapsProvenanceError: If there is an error
         """
-        name, proj_name, org_name = self._provenance_utils.get_name_project_org_of_rocrate(self._inputdir)
-
-        if self._name is not None:
-            name = self._name
-
-        if self._organization_name is not None:
-            org_name = self._organization_name
-
-        if self._project_name is not None:
-            proj_name = self._project_name
         try:
             self._provenance_utils.register_rocrate(self._outdir,
-                                                    name=name,
-                                                    organization_name=org_name,
-                                                    project_name=proj_name)
+                                                    name=self._name,
+                                                    organization_name=self._organization_name,
+                                                    project_name=self._project_name,
+                                                    description=self._description,
+                                                    keywords=self._keywords)
         except TypeError as te:
             raise CellMapsImageEmbeddingError('Invalid provenance: ' + str(te))
         except KeyError as ke:
@@ -527,12 +559,17 @@ class CellmapsImageEmbedder(object):
 
         :raises CellMapsImageEmbeddingError: If fairscape call fails
         """
+        software_keywords = self._keywords
+        software_keywords.extend(['tools', cellmaps_image_embedding.__name__])
+        software_description = self._description + ' ' + \
+                               cellmaps_image_embedding.__description__
         self._softwareid = self._provenance_utils.register_software(self._outdir,
                                                                     name=cellmaps_image_embedding.__name__,
-                                                                    description=cellmaps_image_embedding.__description__,
+                                                                    description=software_description,
                                                                     author=cellmaps_image_embedding.__author__,
                                                                     version=cellmaps_image_embedding.__version__,
-                                                                    file_format='.py',
+                                                                    file_format='py',
+                                                                    keywords=software_keywords,
                                                                     url=cellmaps_image_embedding.__repo_url__)
 
     def _register_computation(self):
@@ -543,22 +580,33 @@ class CellmapsImageEmbedder(object):
         logger.debug('Getting id of input rocrate')
         input_dataset_id = self._provenance_utils.get_id_of_rocrate(self._inputdir)
 
+        keywords = self._keywords
+        keywords.extend(['computation'])
+        description = self._description + ' run of ' + cellmaps_image_embedding.__name__
+
         self._provenance_utils.register_computation(self._outdir,
                                                     name=cellmaps_image_embedding.__name__ + ' computation',
                                                     run_by=str(self._provenance_utils.get_login()),
                                                     command=str(self._input_data_dict),
-                                                    description='run of ' + cellmaps_image_embedding.__name__,
+                                                    description=description,
+                                                    keywords=keywords,
                                                     used_software=[self._softwareid],
                                                     used_dataset=[input_dataset_id],
                                                     generated=self._generated_dataset_ids)
 
     def _register_image_embedding_file(self):
         """
-        Registers image_gene_node_attributes.tsv file with create as a dataset
+        Registers :py:const:`cellmaps_utils.constants.IMAGE_EMBEDDING_FILE` file with
+        create as a dataset
 
         """
+        description = self._description
+        description += ' file'
+        keywords = self._keywords
+        keywords.extend(['file'])
         data_dict = {'name': cellmaps_image_embedding.__name__ + ' output file',
-                     'description': 'Image gene node attributes file',
+                     'description': description,
+                     'keywords': keywords,
                      'data-format': 'tsv',
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
@@ -594,6 +642,8 @@ class CellmapsImageEmbedder(object):
         Gets image probability file
         :return:
         """
+        # Todo need to switch to constants.IMAGE_LABELS_PROBABILITY_FILE
+        #      once cellmaps_utils is updated
         return os.path.join(self._outdir, "labels_prob.tsv")
     
     def get_name_mapping(self):
@@ -625,6 +675,8 @@ class CellmapsImageEmbedder(object):
             if self._inputdir is None:
                 raise CellMapsImageEmbeddingError('inputdir must be set')
 
+            self._update_provenance_fields()
+
             self._create_rocrate()
 
             self._register_software()
@@ -639,7 +691,7 @@ class CellmapsImageEmbedder(object):
                     header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
                     writer.writerow(header_line)
                     header_line_prob = ['']
-                    for key in range(0,len(ABB_LABEL_INDEX.keys())):
+                    for key in range(0, len(ABB_LABEL_INDEX.keys())):
                         header_line_prob.append(ABB_LABEL_INDEX[str(key)])
                     prob_writer.writerow(header_line_prob)
                     for row, prob_list in self._embedding_generator.get_next_embedding():

@@ -77,7 +77,9 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
             prov_util.register_rocrate(inputdir,
                                        name='name of input crate',
                                        organization_name='name of organization',
-                                       project_name='name of project')
+                                       project_name='name of project',
+                                       description='description of rocrate',
+                                       keywords=[''])
             gen = FakeEmbeddingGenerator(inputdir,
                                          dimensions=1024)
             x = CellmapsImageEmbedder(outdir=outdir,
