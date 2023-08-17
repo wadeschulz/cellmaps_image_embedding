@@ -109,6 +109,7 @@ specified when running this tool.
         logutils.setup_cmd_logging(theargs)
         if theargs.fake_embedder is True:
             gen = FakeEmbeddingGenerator(theargs.inputdir,
+                                         fold=theargs.fold,
                                          dimensions=theargs.dimensions)
         else:
             gen = DensenetEmbeddingGenerator(os.path.abspath(theargs.inputdir),
