@@ -10,7 +10,6 @@ Cell Maps ImmunoFluorescent Image Embedder
         :target: https://travis-ci.com/idekerlab/cellmaps_image_embedding
 
 Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas <https://www.proteinatlas.org/>`__
-for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 * Free software: MIT license
 
