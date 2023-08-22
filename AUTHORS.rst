@@ -9,6 +9,10 @@ Developers
 
 * Gege Qian <geqian@ucsd.edu>
 
+* Wei Ouyang
+
+* Casper Winsnes
+
 * Christopher Churas <cchuras@ucsd.edu>
 
 Contributors

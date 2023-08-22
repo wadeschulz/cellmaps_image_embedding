@@ -10,6 +10,7 @@ In a project
 To use cellmaps_image_embedding in a project::
 
     import cellmaps_image_embedding
+    
 
 On the command line
 ---------------------
@@ -17,6 +18,8 @@ On the command line
 For information invoke :code:`cellmaps_image_embeddingcmd.py -h`
 
 **Example usage**
+
+The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided. 
 
 .. code-block::
    # use wget to download model or directly visit url below to download the model file
