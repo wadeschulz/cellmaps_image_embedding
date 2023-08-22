@@ -103,7 +103,7 @@ against those changes.
 Needed files
 ------------
 
-The output directory for the image downloads is required (see . Optionally, a path to the image embedding model can be provided. 
+The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided. 
 
 Usage
 -----
