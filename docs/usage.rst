@@ -10,6 +10,13 @@ In a project
 To use cellmaps_image_embedding in a project::
 
     import cellmaps_image_embedding
+    
+
+Needed files
+------------
+
+The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided. 
+
 
 On the command line
 ---------------------
