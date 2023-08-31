@@ -15,7 +15,6 @@ Cell Maps ImmunoFluorescent Image Embedder
 
 
 Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas <https://www.proteinatlas.org/>`__
-for `Cell Maps for AI (CM4AI) <https://cm4ai.org>`__
 
 * Free software: MIT license
 * Documentation: https://cellmaps-image-embedding.readthedocs.io.
@@ -104,21 +103,23 @@ against those changes.
 Needed files
 ------------
 
-**TODO:** Add description of needed files
-
+The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided. 
 
 Usage
 -----
 
 For information invoke :code:`cellmaps_image_embeddingcmd.py -h`
 
-**Example usage**
+.. code-block::
+   # use wget to download model or directly visit url below to download the model file
+   # to current directory
+   wget https://github.com/CellProfiling/hpa_densenet/raw/main/models/bestfitting_default_model.pth
 
-**TODO:** Add information about example usage
+**Example usage**
 
 .. code-block::
 
-   cellmaps_image_embeddingcmd.py # TODO Add other needed arguments here
+   cellmaps_image_embeddingcmd.py ./cellmaps_image_embedding_outdir --inputdir ./cellmaps_imagedownloader_outdir 
 
 
 Via Docker
@@ -126,12 +127,10 @@ Via Docker
 
 **Example usage**
 
-**TODO:** Add information about example usage
-
 
 .. code-block::
 
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_image_embedding:0.1.0 cellmaps_image_embeddingcmd.py # TODO Add other needed arguments here
+   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_image_embedding:0.1.0 cellmaps_image_embeddingcmd.py ./cellmaps_image_embedding_outdir --inputdir ./cellmaps_imagedownloader_outdir 
 
 
 Credits
