@@ -503,10 +503,14 @@ class CellmapsImageEmbedder(object):
                                                                                                 'embedding',
                                                                                                 'fold' +
                                                                                                 str(self._embedding_generator.get_fold())])
+        if self._name is None:
+            self._name = prov_attrs.get_name()
 
-        self._name = prov_attrs.get_name()
-        self._organization_name = prov_attrs.get_organization_name()
-        self._project_name = prov_attrs.get_project_name()
+        if self._organization_name is None:
+            self._organization_name = prov_attrs.get_organization_name()
+
+        if self._project_name is None:
+            self._project_name = prov_attrs.get_project_name()
         self._keywords = prov_attrs.get_keywords()
         self._description = prov_attrs.get_description()
 
@@ -577,7 +581,7 @@ class CellmapsImageEmbedder(object):
         description = self._description + ' run of ' + cellmaps_image_embedding.__name__
 
         self._provenance_utils.register_computation(self._outdir,
-                                                    name=cellmaps_image_embedding.__name__ + ' computation',
+                                                    name=cellmaps_image_embedding.__computation_name__,
                                                     run_by=str(self._provenance_utils.get_login()),
                                                     command=str(self._input_data_dict),
                                                     description=description,

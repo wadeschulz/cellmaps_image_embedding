@@ -47,6 +47,7 @@ def _parse_arguments(desc, args):
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
                              'in --input directory will be used')
+
     parser.add_argument('--fold', default=1, type=int, help='Image node attribute file fold to use')
     parser.add_argument('--fake_embedder', action='store_true',
                         help='If set, generate fake embedding')
