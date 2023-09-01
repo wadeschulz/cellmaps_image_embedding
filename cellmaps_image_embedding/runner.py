@@ -329,7 +329,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                      'keywords': ['Trained Densenet model', 'pytorch', 'classification'],
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
-                     'date-published': date.today().strftime('%m-%d-%Y')}
+                     'date-published': date.today().strftime('%Y-%m-%d')}
         self._fairscape_dataset_tuples.append((data_dict, dest_model))
 
     def get_next_embedding(self):
@@ -608,7 +608,7 @@ class CellmapsImageEmbedder(object):
                      'data-format': 'tsv',
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
-                     'date-published': date.today().strftime('%m-%d-%Y')}
+                     'date-published': date.today().strftime(self._provenance_utils.get_default_date_format_str())}
         dset_id = self._provenance_utils.register_dataset(self._outdir,
                                                           source_file=self.get_image_embedding_file(),
                                                           data_dict=data_dict,
