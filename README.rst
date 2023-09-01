@@ -110,10 +110,6 @@ Usage
 
 For information invoke :code:`cellmaps_image_embeddingcmd.py -h`
 
-.. code-block::
-   # use wget to download model or directly visit url below to download the model file
-   # to current directory
-   wget https://github.com/CellProfiling/hpa_densenet/raw/main/models/bestfitting_default_model.pth
 
 **Example usage**
 
