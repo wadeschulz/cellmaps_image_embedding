@@ -20,6 +20,7 @@ Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas 
 
    installation
    usage
+   outputs
    modules
    developer
    authors
