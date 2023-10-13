@@ -9,6 +9,8 @@ import shutil
 import unittest
 import tempfile
 import csv
+from unittest.mock import MagicMock
+
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
 from cellmaps_image_embedding.runner import CellmapsImageEmbedder
@@ -104,6 +106,48 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
                         self.assertEqual(1025, len(row))
                     genes.add(row[0])
             self.assertEqual({'', 'PPFIBP1', 'ACTN1', 'MYO1B'}, genes)
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_run_without_logging(self):
+        """ Tests run() without logging."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            run_dir = os.path.join(temp_dir, 'run')
+            mock_embedding_generator = MagicMock()
+            myobj = CellmapsImageEmbedder(outdir=run_dir,
+                                          embedding_generator=mock_embedding_generator)
+            try:
+                myobj.run()
+                self.fail('Expected CellMapsProvenanceError')
+            except CellMapsImageEmbeddingError as e:
+                print(e)
+                self.assertTrue('inputdir' in str(e))
+
+            self.assertFalse(os.path.isfile(os.path.join(run_dir, 'output.log')))
+            self.assertFalse(os.path.isfile(os.path.join(run_dir, 'error.log')))
+
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def test_run_with_logging(self):
+        """ Tests run() with logging."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            run_dir = os.path.join(temp_dir, 'run')
+            mock_embedding_generator = MagicMock()
+            myobj = CellmapsImageEmbedder(outdir=run_dir,
+                                          embedding_generator=mock_embedding_generator,
+                                          skip_logging=False)
+            try:
+                myobj.run()
+                self.fail('Expected CellMapsProvenanceError')
+            except CellMapsImageEmbeddingError as e:
+                self.assertTrue('inputdir' in str(e))
+
+            self.assertTrue(os.path.isfile(os.path.join(run_dir, 'output.log')))
+            self.assertTrue(os.path.isfile(os.path.join(run_dir, 'error.log')))
 
         finally:
             shutil.rmtree(temp_dir)

@@ -440,7 +440,7 @@ class ImageEmbeddingFilterAndNameTranslator(object):
         """
         return self._id_to_gene_mapping
 
-                        
+
 class CellmapsImageEmbedder(object):
     """
     Class to run algorithm
@@ -448,6 +448,7 @@ class CellmapsImageEmbedder(object):
     def __init__(self, outdir=None,
                  inputdir=None,
                  embedding_generator=None,
+                 skip_logging=True,
                  name=None,
                  organization_name=None,
                  project_name=None,
@@ -461,6 +462,8 @@ class CellmapsImageEmbedder(object):
         :param inputdir: Output directory from cellmaps_imagedownloader
         :type inputdir: str
         :param embedding_generator:
+        :param skip_logging: If ``True`` skip logging, if ``None`` or ``False`` do NOT skip logging
+        :type skip_logging: bool
         :param name:
         :type name: str
         :param organization_name:
@@ -488,6 +491,10 @@ class CellmapsImageEmbedder(object):
         self._generated_dataset_ids = []
         self._keywords = None
         self._description = None
+        if skip_logging is None:
+            self._skip_logging = False
+        else:
+            self._skip_logging = skip_logging
 
     def _update_provenance_fields(self):
         """
@@ -641,14 +648,14 @@ class CellmapsImageEmbedder(object):
         :return:
         """
         return os.path.join(self._outdir, constants.IMAGE_LABELS_PROBABILITY_FILE)
-    
+
     def get_name_mapping(self):
         """
 
         :return:
         """
         return self._img_emd_translator.get_oldname_to_new_name_mapping()
-    
+
     def run(self):
         """
         Runs cellmaps_image_embedding
@@ -661,8 +668,9 @@ class CellmapsImageEmbedder(object):
             logger.debug('In run method')
             self._create_output_directory()
 
-            logutils.setup_filelogger(outdir=self._outdir,
-                                      handlerprefix='cellmaps_image_embedding')
+            if self._skip_logging is False:
+                logutils.setup_filelogger(outdir=self._outdir,
+                                          handlerprefix='cellmaps_image_embedding')
             logutils.write_task_start_json(outdir=self._outdir,
                                            start_time=self._start_time,
                                            data={'imagedir': self._inputdir},
@@ -694,7 +702,7 @@ class CellmapsImageEmbedder(object):
                         writer.writerow(row)
                         raw_embeddings.append(row)
                         prob_writer.writerow(prob_list)
- 
+
             self._register_image_embedding_file()
             self._register_embedding_generator_datasets()
 
