@@ -61,6 +61,10 @@ def _parse_arguments(desc, args):
                              'logging.config.html#logging-config-fileformat '
                              'Setting this overrides -v parameter which uses '
                              ' default logger. (default None)')
+    parser.add_argument('--skip_logging', type=_str2bool, default=True,
+                        help='If set, output.log, error.log and '
+                             'task_#_start/finish.json '
+                             'files will not be created')
     parser.add_argument('--verbose', '-v', action='count', default=0,
                         help='Increases verbosity of logger to standard '
                              'error for log messages in this module. Messages are '
@@ -73,6 +77,15 @@ def _parse_arguments(desc, args):
                                  cellmaps_image_embedding.__version__))
 
     return parser.parse_args(args)
+
+
+def _str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
 def main(args):
@@ -89,8 +102,8 @@ def main(args):
     desc = """
 Version {version}
 
-Generates image embeddings from immunofluorescent labeled images 
-from the Human Protein Atlas that were downloaded by the 
+Generates image embeddings from immunofluorescent labeled images
+from the Human Protein Atlas that were downloaded by the
 cellmaps_imagedownloader package using Densenet code taken from:
 https://github.com/CellProfiling/densenet
 
@@ -99,7 +112,7 @@ with red, blue, green, yellow directories containing images and FAIRSCAPE ro-cra
 configuration file (ro-crate-metadata.json)
 
 The generated embeddings are stored in image_emd.tsv under the output directory
-specified when running this tool. 
+specified when running this tool.
 
     """.format(version=cellmaps_image_embedding.__version__)
     theargs = _parse_arguments(desc, args[1:])
@@ -122,6 +135,7 @@ specified when running this tool.
         return CellmapsImageEmbedder(outdir=theargs.outdir,
                                      inputdir=theargs.inputdir,
                                      embedding_generator=gen,
+                                     skip_logging=theargs.skip_logging,
                                      name=theargs.name,
                                      project_name=theargs.project_name,
                                      organization_name=theargs.organization_name,
