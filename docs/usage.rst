@@ -2,7 +2,7 @@
 Usage
 =====
 
-Generates image embeddings of immunofluorescent labeled images from the Human Protein Atlas that were downloaded by the cellmaps_imagedownloader package.
+Generates image embeddings of immunofluorescent labeled images from the `Human Protein Atlas`_ that were downloaded by the cellmaps_imagedownloader_ package.
 
 In a project
 --------------
@@ -36,7 +36,8 @@ For information invoke :code:`cellmaps_image_embeddingcmd.py -h`
 *Optional*
 
 - ``--model_path``
-    URL or path to model file for image embedding. Default is a link to a specific Densenet model.
+    URL or path to model file for image embedding. If left unspecified then the winning Densenet model
+    from `Human Protein Atlas Kaggle Challenge`_ is used
 
 - ``--name``
     Name of this run, needed for FAIRSCAPE. If unset, name value from the directory specified by --inputdir will be used.
@@ -73,11 +74,6 @@ For information invoke :code:`cellmaps_image_embeddingcmd.py -h`
 The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided.
 
 .. code-block::
-   # use wget to download model or directly visit url below to download the model file
-   # to current directory
-   wget https://github.com/CellProfiling/hpa_densenet/raw/main/models/bestfitting_default_model.pth
-
-.. code-block::
 
    cellmaps_image_embeddingcmd.py ./cellmaps_image_embedding_outdir --inputdir ./cellmaps_imagedownloader_outdir --fold 1
 
@@ -89,6 +85,8 @@ Via Docker
 
 .. code-block::
 
-   docker run -v `pwd`:`pwd` -w `pwd` idekerlab/cellmaps_image_embedding:0.1.0 cellmaps_image_embeddingcmd.py ./cellmaps_image_embedding_outdir --inputdir ./cellmaps_imagedownloader_outdir
+   Coming soon...
 
-
+.. _Human Protein Atlas: https://www.proteinatlas.org/
+.. _cellmaps_imagedownloader: https://cellmaps-imagedownloader.readthedocs.io
+.. _Human Protein Atlas Kaggle Challenge: https://github.com/CellProfiling/densenet

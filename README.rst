@@ -6,8 +6,8 @@ Cell Maps ImmunoFluorescent Image Embedder
 .. image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
         :target: https://pypi.python.org/pypi/cellmaps_image_embedding
 
-.. image:: https://img.shields.io/travis/idekerlab/cellmaps_image_embedding.svg
-        :target: https://travis-ci.com/idekerlab/cellmaps_image_embedding
+.. image:: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding.svg?branch=main
+        :target: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding
 
 .. image:: https://readthedocs.org/projects/cellmaps-image-embedding/badge/?version=latest
         :target: https://cellmaps-image-embedding.readthedocs.io/en/latest/?badge=latest
