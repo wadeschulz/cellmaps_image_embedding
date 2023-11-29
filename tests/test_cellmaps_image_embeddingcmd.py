@@ -25,7 +25,7 @@ class TestCellmapsImageEmbedding(unittest.TestCase):
         res = cellmaps_image_embeddingcmd._parse_arguments('hi', ['foo',
                                                                   '--inputdir', 'imagedir'])
 
-        self.assertEqual(0, res.verbose)
+        self.assertEqual(1, res.verbose)
         self.assertEqual('foo', res.outdir)
         self.assertEqual('imagedir', res.inputdir)
         self.assertEqual(res.logconf, None)
@@ -35,7 +35,7 @@ class TestCellmapsImageEmbedding(unittest.TestCase):
                     '--inputdir', 'imagedir']
         res = cellmaps_image_embeddingcmd._parse_arguments('hi', someargs)
 
-        self.assertEqual(2, res.verbose)
+        self.assertEqual(3, res.verbose)
         self.assertEqual('hi', res.logconf)
 
     def test_main(self):
