@@ -245,7 +245,18 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                                                 in_channels=self._channels,
                                                 pretrained=self._model_path)
         model = DataParallel(model)
+
+        # TODO: Need to see if this is necessary
+        #       Need to properly support cpu and gpu modes
         model.to(self._device)
+
+        #
+        # If a node has a GPU you get an error
+        # description of fix
+        # https://stackoverflow.com/questions/68551032/is-there-a-way-to-use-torch-nn-dataparallel-with-cpu
+        # and line below is the fix.
+        model = model.module.to(self._device)
+
         model = model.eval()
         return model
 
