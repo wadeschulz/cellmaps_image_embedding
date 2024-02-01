@@ -13,6 +13,10 @@ Cell Maps ImmunoFluorescent Image Embedder
         :target: https://cellmaps-image-embedding.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
 
+.. image:: https://zenodo.org/badge/618547854.svg
+        :target: https://zenodo.org/doi/10.5281/zenodo.10607452
+        :alt: Zenodo DOI badge
+
 
 Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas <https://www.proteinatlas.org/>`__
 
