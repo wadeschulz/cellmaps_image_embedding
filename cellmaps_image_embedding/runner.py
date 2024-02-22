@@ -626,9 +626,37 @@ class CellmapsImageEmbedder(object):
                      'data-format': 'tsv',
                      'author': cellmaps_image_embedding.__name__,
                      'version': cellmaps_image_embedding.__version__,
+                     'schema': 'https://raw.githubusercontent.com/fairscape/cm4ai-schemas/main/v0.1.0/'
+                               'cm4ai_schema_image_embedding_emd.json',
                      'date-published': date.today().strftime(self._provenance_utils.get_default_date_format_str())}
         dset_id = self._provenance_utils.register_dataset(self._outdir,
                                                           source_file=self.get_image_embedding_file(),
+                                                          data_dict=data_dict,
+                                                          skip_copy=True)
+        self._generated_dataset_ids.append(dset_id)
+
+    def _register_image_probability_file(self):
+        """
+        Registers :py:const:`cellmaps_utils.constants.IMAGE_LABELS_PROBABILITY_FILE` file with
+        create as a dataset
+
+        """
+        logger.debug('Registering label probability file with FAIRSCAPE')
+        description = self._description
+        description += ' file'
+        keywords = self._keywords
+        keywords.extend(['file'])
+
+        data_dict = {'name': cellmaps_image_embedding.__name__ + ' output file',
+                     'description': description,
+                     'keywords': keywords,
+                     'data-format': 'tsv',
+                     'author': cellmaps_image_embedding.__name__,
+                     'version': cellmaps_image_embedding.__version__,
+                     'schema': 'https://raw.githubusercontent.com/fairscape/cm4ai-schemas/main/v0.1.0/cm4ai_schema_image_embedding_labels_prob.json',
+                     'date-published': date.today().strftime(self._provenance_utils.get_default_date_format_str())}
+        dset_id = self._provenance_utils.register_dataset(self._outdir,
+                                                          source_file=self.get_image_probability_file(),
                                                           data_dict=data_dict,
                                                           skip_copy=True)
         self._generated_dataset_ids.append(dset_id)
@@ -715,6 +743,7 @@ class CellmapsImageEmbedder(object):
                         prob_writer.writerow(prob_list)
 
             self._register_image_embedding_file()
+            self._register_image_probability_file()
             self._register_embedding_generator_datasets()
 
             self._register_computation()
