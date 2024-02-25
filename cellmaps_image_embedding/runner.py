@@ -382,7 +382,6 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         genes = self._img_emd_translator.get_name_mapping()[image_id]
                         for g in genes:
                             # probabilities
-                            probs = F.sigmoid(logits)
                             prob_list = [g]
                             prob_list.extend(probs.cpu().data.numpy().tolist()[0])
 
@@ -390,8 +389,6 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                             features = features.cpu().data.numpy().tolist()
                             row = [g]
                             row.extend(features[0])
-                            del features
-                            del logits
                             yield row, prob_list
 
     def get_datasets_that_need_to_be_registered(self):
