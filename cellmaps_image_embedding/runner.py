@@ -171,7 +171,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
             if image_id not in self._img_emd_translator.get_name_mapping():
                 continue
             genes = self._img_emd_translator.get_name_mapping()[image_id]
-                for g in genes:
+            for g in genes:
                 row = [g]
                 row.extend(np.random.normal(size=self.get_dimensions()))  # sample normal distribution
                 prob = [g]
@@ -380,14 +380,15 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         if image_id not in self._img_emd_translator.get_name_mapping():
                             continue
                         genes = self._img_emd_translator.get_name_mapping()[image_id]
+                        probs = F.sigmoid(logits).cpu().data.numpy().tolist()[0]
+                        features = features.cpu().data.numpy().tolist()
+                        
                         for g in genes:
                             # probabilities
-                            probs = F.sigmoid(logits)
                             prob_list = [g]
-                            prob_list.extend(probs.cpu().data.numpy().tolist()[0])
+                            prob_list.extend(probs)
 
                             # features
-                            features = features.cpu().data.numpy().tolist()
                             row = [g]
                             row.extend(features[0])
                             yield row, prob_list
