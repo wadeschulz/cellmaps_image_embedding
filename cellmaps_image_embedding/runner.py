@@ -382,6 +382,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         genes = self._img_emd_translator.get_name_mapping()[image_id]
                         for g in genes:
                             # probabilities
+                            probs = F.sigmoid(logits)
                             prob_list = [g]
                             prob_list.extend(probs.cpu().data.numpy().tolist()[0])
 
