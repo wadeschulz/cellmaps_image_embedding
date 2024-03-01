@@ -12,6 +12,16 @@ The directory should contain following files:
     A TSV file containing attributes for image genes generated during the first fold of execution. ``2_image_gene_node_attributes.tsv`` corresponds
     to the second fold of execution etc.
 
+    It is necessary that the file contains ``name`` and ``filename`` columns as they are directly referenced in the code,
+    but it will usually also have other columns described below:
+
+    * name - contains the gene symbol. In some cases, it can contain an ensembl ID or another query, that mygene was queried with.
+    * represents - a comma-separated list of Ensembl gene IDs that the gene symbol represents.
+    * ambiguous - a comma-separated list of gene symbols/ queries that are considered ambiguous for the given antibody.
+    * antibody - the ID of the antibody used in the experiment.
+    * filename - the filename where the image associated with the gene and antibody can be found.
+    * imageurl - the url of the image if found
+
 .. code-block::
 
     name	represents	ambiguous	antibody	filename	imageurl
