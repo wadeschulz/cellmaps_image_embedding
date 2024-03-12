@@ -17,7 +17,7 @@ Cell Maps ImmunoFluorescent Image Embedder
 Generate embeddings from ImmunoFluorescent image data from `Human Protein Atlas <https://www.proteinatlas.org/>`__
 
 * Free software: MIT license
-
+* Source code: https://github.com/idekerlab/cellmaps_image_embedding
 
 .. toctree::
    :maxdepth: 2
