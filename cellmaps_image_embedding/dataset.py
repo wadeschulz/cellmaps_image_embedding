@@ -41,20 +41,25 @@ class ProteinDataset(Dataset):
         if alt_image_ids is not None:
 
             self.image_ids = alt_image_ids
-            print('setting alt image ids: ' + str(self.image_ids))
+            logger.debug('setting alt image ids: ' + str(self.image_ids))
         else:
             # should we get image names from all color directories
             # and then let sort uniq do its work or do we assume we are good?
             image_names = os.listdir(os.path.join(self.image_dir, 'red'))
+            logger.debug('Found: ' + str(len(image_names)) +
+                         ' images in red directory')
+
             # eg. ffd91122-bad0-11e8-b2b8-ac1f6b6435d0_red.png -> ffd91122-bad0-11e8-b2b8-ac1f6b6435d0
             self.image_ids = np.sort(
                 np.unique(
                     [image_name[: image_name.rfind("_")] for image_name in image_names if image_name.endswith(self.suffix)]
                 )
             )
-
         self.num = len(self.image_ids)
-        
+        logger.debug('Found ' + str(self.num) + ' unique image_ids')
+        if self.num > 0:
+            logger.debug('First image_id: ' + str(self.image_ids[0]))
+
     def set_transform(self, transform=None):
         self.transform = transform
 
@@ -72,11 +77,17 @@ class ProteinDataset(Dataset):
         # resize image
         for color in self.colors:
             try:
+
                 image = np.array(Image.open(
                     opj(self.image_dir, color, "%s_%s%s" % (image_id, color, self.suffix))))[:, :, constants.COLOR_INDEXS.get(color)]
 
-            except: 
-                print('bad image : %s' % image_id)
+            except Exception as e:
+                # for issue #12 added proper debug statement instead of just saying bad image
+                logger.debug('Caught exception loading image : ' +
+                             str(image_id) + ' for color ' +
+                             str(color) +
+                             ' using PIL : ' +
+                             str(e) + ' going to try cv2')
                 image = cv2.imread(opj(self.image_dir, color, "%s_%s%s" % (image_id, color, self.suffix)))[:, :, -1::-1][:, :, constants.COLOR_INDEXS.get(color)]
             
             h, w = image.shape[:2]
@@ -93,7 +104,7 @@ class ProteinDataset(Dataset):
         ]
 
         if image[0] is None:
-            print(self.image_dir, image_id)
+            logger.debug(str(self.image_dir) + ' ' + str(image_id))
         
         image = np.stack(image, axis=-1)
         logger.info(str(image.shape))
