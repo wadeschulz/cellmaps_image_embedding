@@ -1,19 +1,22 @@
 =============================================
 Cell Maps ImmunoFluorescent Image Embedder
 =============================================
+|a| |b| |c| |d|
 
-
-.. image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
+.. |a| image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
         :target: https://pypi.python.org/pypi/cellmaps_image_embedding
+        
 
-.. image:: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding.svg?branch=main
+.. |b| image:: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding.svg?branch=main
         :target: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding
+        
 
-.. image:: https://readthedocs.org/projects/cellmaps-image-embedding/badge/?version=latest
+.. |c| image:: https://readthedocs.org/projects/cellmaps-image-embedding/badge/?version=latest
         :target: https://cellmaps-image-embedding.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
+        
 
-.. image:: https://zenodo.org/badge/618547854.svg
+.. |d| image:: https://zenodo.org/badge/618547854.svg
         :target: https://zenodo.org/doi/10.5281/zenodo.10607452
         :alt: Zenodo DOI badge
 
