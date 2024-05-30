@@ -3,20 +3,18 @@
 
 """Tests for `cellmaps_image_embedding` package."""
 
-
 import os
 import shutil
 import unittest
 import tempfile
 import csv
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 from cellmaps_utils import constants
 from cellmaps_utils.provenance import ProvenanceUtil
 from cellmaps_image_embedding.runner import CellmapsImageEmbedder
 from cellmaps_image_embedding.runner import FakeEmbeddingGenerator
 from cellmaps_image_embedding.exceptions import CellMapsImageEmbeddingError
-
 
 
 class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
@@ -65,9 +63,15 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
                                          constants.IMAGE_GENE_NODE_ATTR_FILE)
             with open(img_gene_file, 'w') as f:
                 f.write('name\trepresents\tambiguous\tantibody\tfilename\timageurl\n')
-                f.write('PPFIBP1\tensembl:ENSG00000110841\t\tHPA001924\t35_H1_1_\thttp://images.proteinatlas.org/1924/35_H1_1_blue_red_green.jpg\n')
-                f.write('ACTN1\tensembl:ENSG00000072110\t\tCAB004303\t669_H5_1_\thttp://images.proteinatlas.org/4303/669_H5_1_blue_red_green.jpg\n')
-                f.write('MYO1B\tensembl:ENSG00000128641\t\tHPA013607\t107_F3_1_\thttp://images.proteinatlas.org/13607/107_F3_1_blue_red_green.jpg\n')
+                f.write(
+                    'PPFIBP1\tensembl:ENSG00000110841\t\tHPA001924\t35_H1_1_\thttp://images.proteinatlas.org/1924'
+                    '/35_H1_1_blue_red_green.jpg\n')
+                f.write(
+                    'ACTN1\tensembl:ENSG00000072110\t\tCAB004303\t669_H5_1_\thttp://images.proteinatlas.org/4303'
+                    '/669_H5_1_blue_red_green.jpg\n')
+                f.write(
+                    'MYO1B\tensembl:ENSG00000128641\t\tHPA013607\t107_F3_1_\thttp://images.proteinatlas.org/13607'
+                    '/107_F3_1_blue_red_green.jpg\n')
 
             red_img_dir = os.path.join(inputdir, constants.RED)
             os.makedirs(red_img_dir, mode=0o755)
@@ -151,3 +155,49 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
 
         finally:
             shutil.rmtree(temp_dir)
+
+
+class TestFakeEmbeddingGenerator(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.dimensions = 1024
+        self.fake_img_dir = os.path.join(self.temp_dir, 'red')
+        os.makedirs(self.fake_img_dir, exist_ok=True)
+
+        self.fake_image_file = os.path.join(self.fake_img_dir, 'image_1_red.jpg')
+        with open(self.fake_image_file, 'w') as f:
+            f.write('fake content')
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    @patch('cellmaps_image_embedding.runner.ImageEmbeddingFilterAndNameTranslator._gen_filtered_mapping')
+    def test_get_next_embedding(self, mock_gen_filtered_mapping):
+        self.attributes_file = os.path.join(self.temp_dir, '1_image_gene_node_attributes.tsv')
+        with open(self.attributes_file, 'w') as f:
+            f.write('filename\tname\n')
+            f.write('image_1_red.jpg\tGene1\n')
+        mock_gen_filtered_mapping.return_value = {'image_1_': ['Gene1']}
+        generator = FakeEmbeddingGenerator(self.temp_dir, self.dimensions)
+        embeddings = list(generator.get_next_embedding())
+
+        self.assertEqual(len(embeddings), 1)
+        self.assertEqual(embeddings[0][0][0], 'Gene1')
+        self.assertEqual(len(embeddings[0][0]), self.dimensions + 1)
+
+    @patch('cellmaps_image_embedding.runner.ImageEmbeddingFilterAndNameTranslator._gen_filtered_mapping')
+    def test_get_next_embedding_multiple_genes(self, mock_gen_filtered_mapping):
+        self.attributes_file = os.path.join(self.temp_dir, '1_image_gene_node_attributes.tsv')
+        with open(self.attributes_file, 'w') as f:
+            f.write('filename\tname\n')
+            f.write('image_1_red.jpg\tGene1\n')
+            f.write('image_1_red.jpg\tGene2\n')
+            f.write('image_1_red.jpg\tGene3\n')
+        mock_gen_filtered_mapping.return_value = {'image_1_': ['Gene1', 'Gene2', 'Gene3']}
+        generator = FakeEmbeddingGenerator(self.temp_dir, self.dimensions)
+        embeddings = list(generator.get_next_embedding())
+
+        self.assertEqual(len(embeddings), 3)
+        for embedding, prob in embeddings:
+            self.assertIn(embedding[0], ['Gene1', 'Gene2', 'Gene3'])
+            self.assertEqual(len(embedding), self.dimensions + 1)
