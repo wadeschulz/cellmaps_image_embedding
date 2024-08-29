@@ -5,16 +5,16 @@ Cell Maps ImmunoFluorescent Image Embedder
 
 .. |a| image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
         :target: https://pypi.python.org/pypi/cellmaps_image_embedding
-        
+
 
 .. |b| image:: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding.svg?branch=main
         :target: https://app.travis-ci.com/idekerlab/cellmaps_image_embedding
-        
+
 
 .. |c| image:: https://readthedocs.org/projects/cellmaps-image-embedding/badge/?version=latest
         :target: https://cellmaps-image-embedding.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation Status
-        
+
 
 .. |d| image:: https://zenodo.org/badge/618547854.svg
         :target: https://zenodo.org/doi/10.5281/zenodo.10607452
@@ -57,7 +57,7 @@ Installation
    pip install dist/cellmaps_image_embedding*whl
 
 
-Run **make** command with no arguments to see other build/deploy options including creation of Docker image 
+Run **make** command with no arguments to see other build/deploy options including creation of Docker image
 
 .. code-block::
 
@@ -83,6 +83,9 @@ Output:
    install              install the package to the active Python's site-packages
    dockerbuild          build docker image and store in local repository
    dockerpush           push image to dockerhub
+
+
+Before running tests, please install: ``pip install -r requirements_dev.txt``.
 
 For developers
 -------------------------------------------
@@ -110,7 +113,7 @@ against those changes.
 Needed files
 ------------
 
-The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided. 
+The output directory for the image downloads is required (see `Cell Maps Image Downloader <https://github.com/idekerlab/cellmaps_imagedownloader/>`__). Optionally, a path to the image embedding model can be provided.
 
 Usage
 -----
@@ -122,7 +125,7 @@ For information invoke :code:`cellmaps_image_embeddingcmd.py -h`
 
 .. code-block::
 
-   cellmaps_image_embeddingcmd.py ./cellmaps_image_embedding_outdir --inputdir ./cellmaps_imagedownloader_outdir 
+   cellmaps_image_embeddingcmd.py ./cellmaps_image_embedding_outdir --inputdir ./cellmaps_imagedownloader_outdir
 
 
 Via Docker
