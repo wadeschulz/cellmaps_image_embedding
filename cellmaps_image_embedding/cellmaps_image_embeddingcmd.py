@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import argparse
+import json
 import os
 import sys
 import logging
@@ -29,24 +30,29 @@ def _parse_arguments(desc, args):
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
-    parser.add_argument('--inputdir', required=True,
+    parser.add_argument('--inputdir',
                         help='Directory with rocrate where blue, red, '
                              'yellow, and green image directories reside')
     parser.add_argument('--model_path', type=str,
                         default='https://github.com/CellProfiling/densenet/releases/download/v0.1.0/external_crop512_focal_slov_hardlog_class_densenet121_dropout_i768_aug2_5folds_fold0_final.pth',
                         help='URL or path to model file for image embedding')
+    parser.add_argument('--provenance',
+                        help='Path to file containing provenance '
+                             'information about input files in JSON format. '
+                             'This is required if inputdir does not contain '
+                             'ro-crate-metadata.json file.')
     parser.add_argument('--name',
                         help='Name of this run, needed for FAIRSCAPE. If '
                              'unset, name value from specified '
-                             'by --inputdir directory will be used')
+                             'by --inputdir directory or provenance file will be used')
     parser.add_argument('--organization_name',
                         help='Name of organization running this tool, needed '
                              'for FAIRSCAPE. If unset, organization name specified '
-                             'in --inputdir directory will be used')
+                             'in --inputdir directory or provenance file will be used')
     parser.add_argument('--project_name',
                         help='Name of project running this tool, needed for '
                              'FAIRSCAPE. If unset, project name specified '
-                             'in --input directory will be used')
+                             'in --input directory or provenance file will be used')
 
     parser.add_argument('--fold', default=1, type=int, help='Image node attribute file fold to use')
     parser.add_argument('--fake_embedder', action='store_true',
@@ -109,6 +115,12 @@ specified when running this tool.
     theargs.program = args[0]
     theargs.version = cellmaps_image_embedding.__version__
 
+    if theargs.provenance is not None:
+        with open(theargs.provenance, 'r') as f:
+            json_prov = json.load(f)
+    else:
+        json_prov = None
+
     try:
         logutils.setup_cmd_logging(theargs)
         if theargs.fake_embedder is True:
@@ -129,6 +141,7 @@ specified when running this tool.
                                      name=theargs.name,
                                      project_name=theargs.project_name,
                                      organization_name=theargs.organization_name,
+                                     provenance=json_prov,
                                      input_data_dict=theargs.__dict__).run()
     except Exception as e:
         logger.exception('Caught exception: ' + str(e))

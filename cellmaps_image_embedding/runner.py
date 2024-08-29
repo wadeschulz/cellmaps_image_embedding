@@ -382,7 +382,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
                         genes = self._img_emd_translator.get_name_mapping()[image_id]
                         probs = F.sigmoid(logits).cpu().data.numpy().tolist()[0]
                         features = features.cpu().data.numpy().tolist()
-                        
+
                         for g in genes:
                             # probabilities
                             prob_list = [g]
@@ -467,7 +467,8 @@ class CellmapsImageEmbedder(object):
                  organization_name=None,
                  project_name=None,
                  input_data_dict=None,
-                 provenance_utils=ProvenanceUtil()):
+                 provenance_utils=ProvenanceUtil(),
+                 provenance=None):
         """
         Constructor
 
@@ -493,7 +494,7 @@ class CellmapsImageEmbedder(object):
         if outdir is None:
             raise CellMapsImageEmbeddingError('outdir is None')
         self._outdir = os.path.abspath(outdir)
-        self._inputdir = inputdir
+        self._inputdir = os.path.abspath(inputdir) if inputdir is not None else inputdir
         self._start_time = int(time.time())
         self._name = name
         self._project_name = project_name
@@ -505,6 +506,8 @@ class CellmapsImageEmbedder(object):
         self._generated_dataset_ids = []
         self._keywords = None
         self._description = None
+        self._provenance = provenance
+        self._inputdataset_ids = []
         if skip_logging is None:
             self._skip_logging = False
         else:
@@ -515,25 +518,38 @@ class CellmapsImageEmbedder(object):
 
         :return:
         """
-        prov_attrs = self._provenance_utils.get_merged_rocrate_provenance_attrs(self._inputdir,
-                                                                                override_name=self._name,
-                                                                                override_project_name=self._project_name,
-                                                                                override_organization_name=self._organization_name,
-                                                                                extra_keywords=['IF Image Embedding',
-                                                                                                'IF microscopy images',
-                                                                                                'embedding',
-                                                                                                'fold' +
-                                                                                                str(self._embedding_generator.get_fold())])
-        if self._name is None:
-            self._name = prov_attrs.get_name()
+        if os.path.exists(os.path.join(self._inputdir, constants.RO_CRATE_METADATA_FILE)):
+            prov_attrs = self._provenance_utils.get_merged_rocrate_provenance_attrs(self._inputdir,
+                                                                                    override_name=self._name,
+                                                                                    override_project_name=self._project_name,
+                                                                                    override_organization_name=self._organization_name,
+                                                                                    extra_keywords=['IF Image Embedding',
+                                                                                                    'IF microscopy images',
+                                                                                                    'embedding',
+                                                                                                    'fold' +
+                                                                                                    str(self._embedding_generator.get_fold())])
+            if self._name is None:
+                self._name = prov_attrs.get_name()
 
-        if self._organization_name is None:
-            self._organization_name = prov_attrs.get_organization_name()
+            if self._organization_name is None:
+                self._organization_name = prov_attrs.get_organization_name()
 
-        if self._project_name is None:
-            self._project_name = prov_attrs.get_project_name()
-        self._keywords = prov_attrs.get_keywords()
-        self._description = prov_attrs.get_description()
+            if self._project_name is None:
+                self._project_name = prov_attrs.get_project_name()
+            self._keywords = prov_attrs.get_keywords()
+            self._description = prov_attrs.get_description()
+        elif self._provenance is not None:
+            self._name = self._provenance['name'] if 'name' in self._provenance else 'Image Embedding'
+            self._organization_name = self._provenance['organization-name'] \
+                if 'organization-name' in self._provenance else 'NA'
+            self._project_name = self._provenance['project-name']\
+                if 'project-name' in self._provenance else 'NA'
+            self._keywords = self._provenance['keywords'] if 'keywords' in self._provenance else ['image']
+            self._description = self._provenance['description'] if 'description' in self._provenance else \
+                'Embedding of Images'
+        else:
+            raise CellMapsImageEmbeddingError('Input directory should be an RO-Crate or provenance should be '
+                                              'specified.')
 
     def _create_rocrate(self):
         """
@@ -595,7 +611,8 @@ class CellmapsImageEmbedder(object):
 
         """
         logger.debug('Getting id of input rocrate')
-        input_dataset_id = self._provenance_utils.get_id_of_rocrate(self._inputdir)
+        if os.path.exists(os.path.join(self._inputdir, constants.RO_CRATE_METADATA_FILE)):
+            self._inputdataset_ids.append(self._provenance_utils.get_id_of_rocrate(self._inputdir))
 
         keywords = self._keywords
         keywords.extend(['computation'])
@@ -608,7 +625,7 @@ class CellmapsImageEmbedder(object):
                                                     description=description,
                                                     keywords=keywords,
                                                     used_software=[self._softwareid],
-                                                    used_dataset=[input_dataset_id],
+                                                    used_dataset=self._inputdataset_ids,
                                                     generated=self._generated_dataset_ids)
 
     def _register_image_embedding_file(self):
