@@ -2,8 +2,11 @@
 History
 =======
 
-0.1.1 (TBD)
-------------------
+0.2.0 (2024-08-29)
+-------------------
+
+* Added ``--provenance`` flag to pass a path to json file with provenance information. This removes the
+  necessity of input directory to be an RO-Crate.
 
 * Bug fixes
     * Resolved an issue in embedding generation process where images associated with multiple genes were not correctly
