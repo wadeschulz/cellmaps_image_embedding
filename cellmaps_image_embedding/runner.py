@@ -708,13 +708,6 @@ class CellmapsImageEmbedder(object):
         """
         return os.path.join(self._outdir, constants.IMAGE_LABELS_PROBABILITY_FILE)
 
-    def get_name_mapping(self):
-        """
-
-        :return:
-        """
-        return self._img_emd_translator.get_oldname_to_new_name_mapping()
-
     def run(self):
         """
         Runs cellmaps_image_embedding

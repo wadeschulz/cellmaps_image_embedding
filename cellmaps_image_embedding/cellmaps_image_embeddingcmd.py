@@ -30,7 +30,7 @@ def _parse_arguments(desc, args):
     parser = argparse.ArgumentParser(description=desc,
                                      formatter_class=constants.ArgParseFormatter)
     parser.add_argument('outdir', help='Output directory')
-    parser.add_argument('--inputdir',
+    parser.add_argument('--inputdir', required=True,
                         help='Directory with rocrate where blue, red, '
                              'yellow, and green image directories reside')
     parser.add_argument('--model_path', type=str,
