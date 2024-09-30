@@ -63,6 +63,7 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
+
     def __init__(self, dimensions=1024, fold=None):
         """
         Constructor
@@ -113,6 +114,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
     """
     Fakes image embedding
     """
+
     def __init__(self, inputdir, dimensions=1024, fold=1,
                  suffix='.jpg', img_emd_translator=None):
         """
@@ -155,7 +157,7 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
                 continue
             # include the _ at the end cause that is also included in
             # image_gene_node_attributes.tsv file
-            image_set.add(entry[: entry.rfind('_')+1])
+            image_set.add(entry[: entry.rfind('_') + 1])
         return list(image_set)
 
     def get_next_embedding(self):
@@ -175,7 +177,8 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
                 row = [g]
                 row.extend(np.random.normal(size=self.get_dimensions()))  # sample normal distribution
                 prob = [g]
-                prob.extend([random.random() for x in range(0, len(ABB_LABEL_INDEX.keys()))])  # might need to add to one
+                prob.extend(
+                    [random.random() for x in range(0, len(ABB_LABEL_INDEX.keys()))])  # might need to add to one
                 yield row, prob
 
 
@@ -188,6 +191,7 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
     code and no memory leaks
 
     """
+
     def __init__(self, inputdir, dimensions=1024,
                  outdir=None,
                  model_path=None,
@@ -459,6 +463,7 @@ class CellmapsImageEmbedder(object):
     """
     Class to run algorithm
     """
+
     def __init__(self, outdir=None,
                  inputdir=None,
                  embedding_generator=None,
@@ -523,11 +528,12 @@ class CellmapsImageEmbedder(object):
                                                                                     override_name=self._name,
                                                                                     override_project_name=self._project_name,
                                                                                     override_organization_name=self._organization_name,
-                                                                                    extra_keywords=['IF Image Embedding',
-                                                                                                    'IF microscopy images',
-                                                                                                    'embedding',
-                                                                                                    'fold' +
-                                                                                                    str(self._embedding_generator.get_fold())])
+                                                                                    extra_keywords=[
+                                                                                        'IF Image Embedding',
+                                                                                        'IF microscopy images',
+                                                                                        'embedding',
+                                                                                        'fold' +
+                                                                                        str(self._embedding_generator.get_fold())])
             if self._name is None:
                 self._name = prov_attrs.get_name()
 
@@ -542,7 +548,7 @@ class CellmapsImageEmbedder(object):
             self._name = self._provenance['name'] if 'name' in self._provenance else 'Image Embedding'
             self._organization_name = self._provenance['organization-name'] \
                 if 'organization-name' in self._provenance else 'NA'
-            self._project_name = self._provenance['project-name']\
+            self._project_name = self._provenance['project-name'] \
                 if 'project-name' in self._provenance else 'NA'
             self._keywords = self._provenance['keywords'] if 'keywords' in self._provenance else ['image']
             self._description = self._provenance['description'] if 'description' in self._provenance else \
@@ -708,6 +714,17 @@ class CellmapsImageEmbedder(object):
         """
         return os.path.join(self._outdir, constants.IMAGE_LABELS_PROBABILITY_FILE)
 
+    def generate_readme(self):
+        description = getattr(cellmaps_image_embedding, '__description__', 'No description provided.')
+        version = getattr(cellmaps_image_embedding, '__version__', '0.0.0')
+
+        with open(os.path.join(os.path.dirname(__file__), 'readme_outputs.txt'), 'r') as f:
+            readme_outputs = f.read()
+
+        readme = readme_outputs.format(DESCRIPTION=description, VERSION=version)
+        with open(os.path.join(self._outdir, 'README.txt'), 'w') as f:
+            f.write(readme)
+
     def run(self):
         """
         Runs cellmaps_image_embedding
@@ -727,6 +744,8 @@ class CellmapsImageEmbedder(object):
                                            start_time=self._start_time,
                                            data={'imagedir': self._inputdir},
                                            version=cellmaps_image_embedding.__version__)
+
+            self.generate_readme()
 
             if self._inputdir is None:
                 raise CellMapsImageEmbeddingError('inputdir must be set')
@@ -767,4 +786,3 @@ class CellmapsImageEmbedder(object):
                                             status=exitcode)
 
         return exitcode
-

@@ -67,6 +67,7 @@ setup(
     name='cellmaps_image_embedding',
     packages=find_packages(include=['cellmaps_image_embedding']),
     package_dir={'cellmaps_image_embedding': 'cellmaps_image_embedding'},
+    package_data={'cellmaps_image_embedding': ['readme_outputs.txt']},
     scripts=['cellmaps_image_embedding/cellmaps_image_embeddingcmd.py'],
     setup_requires=setup_requirements,
     url=repo_url,
