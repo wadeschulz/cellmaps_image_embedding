@@ -63,8 +63,11 @@ class EmbeddingGenerator(object):
     Base class for implementations that generate
     network embeddings
     """
+    DEFAULT_FOLD = 1
+    DIMENSIONS = 1024
+    SUFFIX = '.jpg'
 
-    def __init__(self, dimensions=1024, fold=None):
+    def __init__(self, dimensions=DIMENSIONS, fold=DEFAULT_FOLD):
         """
         Constructor
         """
@@ -115,8 +118,8 @@ class FakeEmbeddingGenerator(EmbeddingGenerator):
     Fakes image embedding
     """
 
-    def __init__(self, inputdir, dimensions=1024, fold=1,
-                 suffix='.jpg', img_emd_translator=None):
+    def __init__(self, inputdir, dimensions=EmbeddingGenerator.DIMENSIONS, fold=EmbeddingGenerator.DEFAULT_FOLD,
+                 suffix=EmbeddingGenerator.SUFFIX, img_emd_translator=None):
         """
         Constructor
 
@@ -192,11 +195,11 @@ class DensenetEmbeddingGenerator(EmbeddingGenerator):
 
     """
 
-    def __init__(self, inputdir, dimensions=1024,
+    def __init__(self, inputdir, dimensions=EmbeddingGenerator.DIMENSIONS,
                  outdir=None,
                  model_path=None,
-                 suffix='.jpg',
-                 fold=1,
+                 suffix=EmbeddingGenerator.SUFFIX,
+                 fold=EmbeddingGenerator.DEFAULT_FOLD,
                  img_emd_translator=None):
         """
         Constructor
@@ -518,6 +521,17 @@ class CellmapsImageEmbedder(object):
         else:
             self._skip_logging = skip_logging
 
+        if self._input_data_dict is None:
+            self._input_data_dict = {'outdir': self._outdir,
+                                     'inputdir': self._inputdir,
+                                     'embedding_generator': str(self._embedding_generator),
+                                     'name': self._name,
+                                     'project_name': self._project_name,
+                                     'organization_name': self._organization_name,
+                                     'skip_logging': self._skip_logging,
+                                     'provenance': str(self._provenance)
+                                     }
+
     def _update_provenance_fields(self):
         """
 
@@ -725,6 +739,18 @@ class CellmapsImageEmbedder(object):
         with open(os.path.join(self._outdir, 'README.txt'), 'w') as f:
             f.write(readme)
 
+    def _write_task_start_json(self):
+
+        data = {'imagedir': self._inputdir}
+
+        if self._input_data_dict is not None:
+            data.update({'commandlineargs': self._input_data_dict})
+
+        logutils.write_task_start_json(outdir=self._outdir,
+                                       start_time=self._start_time,
+                                       data=data,
+                                       version=cellmaps_image_embedding.__version__)
+
     def run(self):
         """
         Runs cellmaps_image_embedding
@@ -740,10 +766,8 @@ class CellmapsImageEmbedder(object):
             if self._skip_logging is False:
                 logutils.setup_filelogger(outdir=self._outdir,
                                           handlerprefix='cellmaps_image_embedding')
-            logutils.write_task_start_json(outdir=self._outdir,
-                                           start_time=self._start_time,
-                                           data={'imagedir': self._inputdir},
-                                           version=cellmaps_image_embedding.__version__)
+
+            self._write_task_start_json()
 
             self.generate_readme()
 

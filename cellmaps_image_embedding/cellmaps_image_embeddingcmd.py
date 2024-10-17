@@ -9,7 +9,7 @@ import logging.config
 from cellmaps_utils import logutils
 from cellmaps_utils import constants
 import cellmaps_image_embedding
-from cellmaps_image_embedding.runner import CellmapsImageEmbedder
+from cellmaps_image_embedding.runner import CellmapsImageEmbedder, EmbeddingGenerator
 from cellmaps_image_embedding.runner import FakeEmbeddingGenerator
 from cellmaps_image_embedding.runner import DensenetEmbeddingGenerator
 
@@ -54,12 +54,13 @@ def _parse_arguments(desc, args):
                              'FAIRSCAPE. If unset, project name specified '
                              'in --input directory or provenance file will be used')
 
-    parser.add_argument('--fold', default=1, type=int, help='Image node attribute file fold to use')
+    parser.add_argument('--fold', default=EmbeddingGenerator.DEFAULT_FOLD, type=int,
+                        help='Image node attribute file fold to use')
     parser.add_argument('--fake_embedder', action='store_true',
                         help='If set, generate fake embedding')
-    parser.add_argument('--dimensions', default=1024, type=int,
+    parser.add_argument('--dimensions', default=EmbeddingGenerator.DIMENSIONS, type=int,
                         help='Dimensions of generated embedding vector')
-    parser.add_argument('--suffix', default='.jpg',
+    parser.add_argument('--suffix', default=EmbeddingGenerator.SUFFIX,
                         help='Suffix for image files')
     parser.add_argument('--logconf', default=None,
                         help='Path to python logging configuration file in '
