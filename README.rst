@@ -1,6 +1,8 @@
 =============================================
 Cell Maps ImmunoFluorescent Image Embedder
 =============================================
+The Cell Maps Image Embedder is part of the Cell Mapping Toolkit
+
 |a| |b| |c| |d|
 
 .. |a| image:: https://img.shields.io/pypi/v/cellmaps_image_embedding.svg
