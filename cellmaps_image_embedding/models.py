@@ -24,7 +24,7 @@ class ArcMarginProduct(nn.Module):
 class ResnetClass(nn.Module):
     def load_pretrained(self, pretrained):
         print('load model: %s' % pretrained)
-        checkpoint = torch.load(pretrained)
+        checkpoint = torch.load(pretrained, weights_only=False)
         self.load_state_dict(checkpoint['state_dict'])
 
     def __init__(self,
@@ -119,7 +119,7 @@ def class_resnet50_dropout(num_classes=28, in_channels=4, pretrained=None):
 class DensenetClass(nn.Module):
     def load_pretrained(self, pretrained):
         print('load model: %s' % pretrained)
-        checkpoint = torch.load(pretrained)
+        checkpoint = torch.load(pretrained, weights_only=False)
         self.load_state_dict(checkpoint['state_dict'])
 
     def __init__(self,
