@@ -2,6 +2,13 @@
 History
 =======
 
+0.3.1 (2025-03-18)
+-------------------
+
+* Add version bounds for required packages.
+
+* Bug fix for change in pytorch 2.6.
+
 0.3.0 (2024-12-02)
 -------------------
 
