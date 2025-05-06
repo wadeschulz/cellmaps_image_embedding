@@ -46,7 +46,7 @@ Dependencies
 Compatibility
 -------------
 
-* Python 3.8+
+* Python 3.8 - 3.11
 
 Installation
 ------------
@@ -55,6 +55,7 @@ Installation
 
    git clone https://github.com/idekerlab/cellmaps_image_embedding
    cd cellmaps_image_embedding
+   pip install -r requirements_dev.txt
    make dist
    pip install dist/cellmaps_image_embedding*whl
 
