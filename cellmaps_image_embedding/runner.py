@@ -482,21 +482,54 @@ class CellmapsImageEmbedder(object):
 
         :param outdir: Directory to write the results of this tool
         :type outdir: str
-        :param inputdir: Output directory from cellmaps_imagedownloader
+        :param inputdir: Directory with images that will be embedded, containing color-separated subdirectorie.
+                         Output directory from cellmaps_imagedownloader.
         :type inputdir: str
-        :param embedding_generator:
+        :param embedding_generator: An object implementing the embedding generation logic,
+                                    typically a subclass of :py:class:`~EmbeddingGenerator`, such as
+                                    :py:class:`~DensenetEmbeddingGenerator` or :py:class:`~FakeEmbeddingGenerator`.
+        :type embedding_generator: EmbeddingGenerator
         :param skip_logging: If ``True`` skip logging, if ``None`` or ``False`` do NOT skip logging
         :type skip_logging: bool
-        :param name:
-        :type name: str
-        :param organization_name:
-        :type organization_name: str
-        :param project_name:
-        :type project_name: str
-        :param input_data_dict:
-        :type input_data_dict: dict
-        :param provenance_utils:
+        :param name: Optional name for the dataset, used in provenance tracking. If not provided,
+                     it will be inferred from the RO-Crate in the input directory or fallback defaults.
+        :type name: str or None
+        :param organization_name: Optional name of the organization creating the dataset.
+                                  Used for provenance metadata.
+        :type organization_name: str or None
+        :param project_name: Optional name of the project associated with the dataset.
+                             Used for provenance metadata.
+        :type project_name: str or None
+        :param input_data_dict: Dictionary of input parameters used for execution. This is captured
+                                and stored in metadata as part of reproducibility and provenance.
+                                If not provided, a default dictionary is generated.
 
+                                Example:
+
+                                .. code-block:: python
+
+                                    {'outdir': '/output/path', 'inputdir': '/input/path'}
+        :type input_data_dict: dict or None
+        :param provenance_utils: Utility class instance for handling RO-Crate creation,
+                                 software registration, and FAIRSCAPE dataset tracking.
+                                 Default is a new :py:class:`~ProvenanceUtil` object.
+        :type provenance_utils: ProvenanceUtil
+        :param provenance: Optional dictionary containing explicit provenance metadata, such as
+                           dataset name, project, organization, keywords, and description.
+                           If present, it will override missing information in RO-Crate.
+
+                           Example:
+
+                           .. code-block:: python
+
+                               {
+                                   'name': 'Cell Image Embedding Dataset',
+                                   'organization-name': 'CM4AI',
+                                   'project-name': 'Cell Image Project',
+                                   'keywords': ['embedding', 'microscopy'],
+                                   'description': 'Embedding of IF microscopy images.'
+                               }
+        :type provenance: dict or None
         """
         logger.debug('In constructor')
         if outdir is None:
