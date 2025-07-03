@@ -819,8 +819,8 @@ class CellmapsImageEmbedder(object):
                 with open(self.get_image_probability_file(), 'w', newline='') as pf:
                     writer = csv.writer(f, delimiter='\t')
                     prob_writer = csv.writer(pf, delimiter='\t')
-                    header_line = ['']
-                    header_line.extend([x for x in range(1, self._embedding_generator.get_dimensions())])
+                    header_line = ['id']
+                    header_line.extend([x for x in range(self._embedding_generator.get_dimensions())])
                     writer.writerow(header_line)
                     header_line_prob = ['']
                     for key in range(0, len(ABB_LABEL_INDEX.keys())):
