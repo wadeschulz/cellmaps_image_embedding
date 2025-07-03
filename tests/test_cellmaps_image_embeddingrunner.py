@@ -104,12 +104,9 @@ class TestCellmapsImageEmbeddingRunner(unittest.TestCase):
                 reader = csv.reader(f, delimiter='\t')
 
                 for row in reader:
-                    if row[0] == '':
-                        self.assertEqual(1024, len(row))
-                    else:
-                        self.assertEqual(1025, len(row))
+                    self.assertEqual(1025, len(row))
                     genes.add(row[0])
-            self.assertEqual({'', 'PPFIBP1', 'ACTN1', 'MYO1B'}, genes)
+            self.assertEqual({'id', 'PPFIBP1', 'ACTN1', 'MYO1B'}, genes)
 
         finally:
             shutil.rmtree(temp_dir)
